@@ -1,4 +1,4 @@
-# GOHR ML Experiments Simple Version
+# GOHR ML Experiments (Simple Version)
 
 This repository contains the implementation of RL Agents for learning rule-based games.
 
