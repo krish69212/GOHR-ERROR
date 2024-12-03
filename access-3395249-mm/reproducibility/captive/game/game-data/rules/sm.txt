@@ -1,0 +1,2 @@
+# [Shape Match] Each bucket collects pieces of one shape
+(*,star,*,*,0) (*,triangle,*,*,1) (*,square,*,*,2) (*,circle,*,*,3)

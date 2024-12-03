@@ -1,0 +1,4 @@
+# [Clockwise 2 Free] Permitted bucket moves in clockwise order, with final two moves in cycle free
+(1,*,*,*,[0])
+(1,*,*,*,[1])
+(2,*,*,*,[0,1,2,3])

@@ -1,0 +1,705 @@
+<html>
+  <head><title>Captive Game Server</title></head>  
+  <body>
+    <h1>Captive Game Server</h1>
+
+<div align="center"><em>Updated 2022-06-15 for GS ver 5.002</em></div>
+    
+    <h2>What is the Captive Game Server?</h2>
+
+    <p>The Captive Game Server (CGS) is a small Java application that contains the same game engine as the Web Game Server, but does not have a SQL database, does not write transcript files, and does not communicate with clients using HTTP. It can be used by a Machine Learning researcher (in particular, a participant in the <a href="mlc/mlc-guide.html">The Machine Learning Challenge (MLC)</a>) who wants a ML program to learn how to play a Rule Game game as a counterparty for his ML program to play with.
+
+    <p>The Captive Game Server can be run in two ways: <strong>pipe-based</strong> and  <strong>socket-based</strong>.
+
+    <p>The pipe-based CGS is to be started, as a child process, by the client program (such as a machine learning (ML) program that wants to play a game), and communicates with the client using standard input and standard output (i.e. UNIX pipes). For testing purposes, it can also be run directly from the console by a person who wants to play the game himself, as a human player.</p>
+
+    <p>Since the Captive Game Server is run by the owner of the ML program, the latter has complete control how many times it's run, and with what data. It is a complete "honor system", so to speak. Thus, it is up to the owner of the ML program to keep track of how the CGS is used, how many game episodes were played, and how many moves were attempted in each episode.</p>
+
+    <p>For the convenience of some application, we also have the socket-based version of the CGS, discussed later in this document, which communicates with clients over sockets, rather than a pipe.
+     
+  <h2>The Rule Game / Game of Hidden Rules</h2>
+
+    <P>For general information on the  Rule Game (a.k.a. the  Game of Hidden Rules, GOHR), please see the <strong><a href="./">main documentation page</a></strong>. In particular, the following links may be useful:
+
+      <ul>
+	<li><a href="concepts.html">The main concepts of the Rule Game</a>. 
+	<li><a href="syntax.html">About the syntax of rule set files (GS 3.*)</a>
+	<li><a href="syntax-gs5.html">About the syntax of rule set files: GS 5.* extension</a>
+	<li><a href="arithmetic.html">Bucket expression arithmetic</a>: more about the expressions used to compute the accepting bucket number(s)
+	<li><a href="arithmetic-form.jsp">Try out your arithmetic expressions!</a>
+	<li><a href="colors-and-shapes.html">Using custom colors and shapes in Game Server 2.*</a>
+	<li><a href="object-properties.html">Image-and-property-based objects in Game Server 3.*</a>
+	<li><a href="composite-objects.html">Composite image objects</a>, available in Game Server 4.009.	
+       
+      </ul>
+
+      <h2>The Machine Learning Challenge (MLC)</h2>
+
+    <p>For further information on the  Machine Learning Challenge (MLC), see:
+	  <ul>
+	    <li><a href="mlc/mlc-guide.html">MLC Participant's Guide</a>
+	    <li><a href="mlc/mlc-manage.html">MLC Manager's Guide</a>
+	    <li><a href="mlc/">MLC Participant's Dashboard (submit results here; nickname password required -- obtain it from Paul or Eric)</a>
+	  </ul>
+   
+
+  <h2><a name="install">Installation</a></h2>
+    <p>If you're a UWM team member using CGS installed on <tt>sapir</tt>, you can safely ignore this section.    But if you are installing the CGS on your own machine (especially at a different institution), please follow the instructions below to obtain the Captive Game Server distribution and the necessary third-party files.
+      
+      <h3>Main prerequisites</h3>
+
+    <p>We are normally using the CGS on Linux machines, but if you want, you probably can install it on a MacOS or MS Windows machine as well, likely with some minimal changes to the shell scripts used to run it.
+
+    <p>You need to have a  Java Runtime Environment (JRE) (i.e. the system for running pre-compiled Java code) installed on your machine. Type <tt>which java</tt> on your console to see if you have one already; if you don't, you can get one from Oracle (<a href="https://java.com/en/download/help/download_options.html">How do I install Java?</a>) or from OpenJDK (<a href="https://openjdk.java.net/install/index.html">How to download and install prebuilt OpenJDK packages</a>).
+
+    <p>Our shell scripts are written in <tt>csh</tt>, so your system should have  <tt>csh</tt> installed. (Most Linux / UNIX system already have, and if yours don't, you should be able to easily <a href="https://www.cyberciti.biz/faq/howto-install-csh-shell-on-linux/">install it</a>). Alternatively, you can re-write the scripts for your favorite shell (<tt>sh, bash, ksh,</tt> whatever).
+ 
+      <h3>Choosing a directory</h3>
+
+ <p>You can install the Captive Game Server anywhere on you computer. For the rest of the discussion, let's assume that you have decided to install it under <trt>~/captive</tt>
+
+      
+  <h3>Third-part JAR files</h3>
+
+<p>
+  You need to obtain a set of third-party JAR files that are used for working with JSON-format data (a "JAX-RS RI bundle"). This is how:
+  <ul>
+    <li>
+      You can download a 
+      file such as jaxrs-ri-2.31.zip, or a more recent version. (To do that, you can start from e.g. <a href="https://mvnrepository.com/artifact/org.glassfish.jersey.bundles/jaxrs-ri">https://mvnrepository.com/artifact/org.glassfish.jersey.bundles/jaxrs-ri -Jersey Bundles JAXRS RI </a>, clicking on a version number such as <tt>3.1.0-M2</tt>, and then, in a page such as https://mvnrepository.com/artifact/org.glassfish.jersey.bundles/jaxrs-ri/3.1.0-M2 , clicking on <tt>View all</tt>, you get to a directory listing such as <a href="https://repo1.maven.org/maven2/org/glassfish/jersey/bundles/jaxrs-ri/3.1.0-M2/">org/glassfish/jersey/bundles/jaxrs-ri/3.1.0-M2</a>. In that page, you choose a ZIP file, such as <tt>jaxrs-ri-3.1.0-M2.zip</tt>).
+    <li>Unpack it on your machine under   <tt>~/captive</tt>:
+      <pre>
+	cd ~/captive
+	unzip jaxrs-ri-3.1.0-M2.zip
+      </pre>
+      This will create the directory  <tt>~/captive/jaxrs-ri</tt>, with the JAX-RS stuff in it.
+  </ul>				     
+   
+</p>
+
+<h3>Download and install CGS</h3>
+
+<p>Download a recent version of CGS from our server's <a href="/download">Download Area</a>. Choose a file with a name such as <tt>captive-5.001-2022-05-26.zip</tt>. Unzip it under <tt>~/captive</tt>:
+    
+      <pre>
+	cd ~/captive
+	unzip ~/captive-5.001-2022-05-26.zip
+      </pre>
+This will  create the directory  <tt>~/captive/game</tt>, with all the CGS stuff in it.
+
+      <!--
+    <p>
+In this way CGS can find relevant JAR files (used for handling JSON) in <tt>../jaxrs-ri/ext/*.jar</tt>, relative to the directory  where the scripts are. This is how the class path is set in the shell scripts (specifically, in <tt>set-var-captive.sh</tt>, which is included into <tt>captive-brief.sh</tt> and other scripts).</p>
+
+    <p>other-lib :
+
+      <ul>
+	<li>
+Jersey Media Multipart
+https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-multipart
+      
+https://mvnrepository.com/artifact/org.glassfish.jersey.media/jersey-media-multipart/2.34
+
+      
+      <a href="https://mvnrepository.com/artifact/org.jvnet.mimepull/mimepull">
+      MIME Streaming Extension</a>
+
+    (I used <a href="https://mvnrepository.com/artifact/org.jvnet.mimepull/mimepull/1.9.14">mimepull-1.9.14.jar</a>)
+      </ul>
+
+      <p>Elsewhere:
+      <ul>
+      
+      <li>commons-math3-3.6.1/
+https://commons.apache.org/proper/commons-math/userguide/optimization.html
+Apache Commons Math
+</ul>
+-->
+
+      <h2>Sample data</h2>
+
+<p>To play with the CGS, you need to tell it what game to play. This is done by means of giving it some <a href="data.html"> experiment control files</a>: at the very least, a rule set file, and possibly some other files as well.
+      
+<P>If you're a UWM team member working on <tt>sapir</tt>, you have access to the full set of our <a href="data.html"> experiment control files</a> in <tt>/opt/tomcat/game-data</tt> (or another directory, as per the variable  <tt>FILES_GAME_DATA</tt> in the  <a href="setup/setup-config.html">master config file</a>).
+
+<p>If you are running the CGS on your own machine, but you have also <a href="setup/">installed the web-based Game Server</a> on that machine, you have the  experiment control files in the same or similar location as well (its locaiton may be overridden by the paramter <tt>FILES_GAME_DATA</tt> in the <a href="setup/setup-config.html">master config file</a>.
+
+<p> Otherwise, you can use a smaller set of sample experiment control files that came with the CGS distribution; they are found in <tt>~/captive/game/game-data</tt>.
+
+    <h2>Starting the Captive Game Server</h2>
+
+<p>If you are a UWM Rule Game team member using The CGS on <tt>sapir</tt>, it is installed in the directory <tt>/home/vmenkov/captive</tt>. Otherwise (if you're running the CGS on your own machine, installed as described above), replace <tt>	/home/vmenkov/captive</tt> in the commands below with <tt>~/captive</tt>
+
+      <p>
+      The CGS can play one game at a time. An easy way to choose a game is  to provide the CGS with a game rule file (a few of which can be found in  <tt>/home/vmenkov/captive/game/game-data/rules/</tt> ) and the initial number of pieces. 
+
+      <p>To use CGS, you need to add the directory in which your Java interpreter (<tt>java</tt>) is installed (such as <tt>/opt/jdk-14.0.2/bin</tt>, on <tt>sapir</tt>) into your <tt>PATH</tt>. Alternatively, you can modify the shell scripts mentioned below, so that they use <tt>/opt/jdk-14.0.2/bin/java</tt> rather than just <tt>java</tt>.
+
+      
+    <p>
+      You can run the CGS from the command line as follows, with a <tt>csh</tt> script:
+      <pre>
+/home/vmenkov/captive/game/captive-full.sh /home/vmenkov/captive/game/game-data/rules/rules-02.txt 8
+      </pre>
+In this example, you will start a session using the rule description from the specified file; each episode will use a random initial board with 8 pieces. During the session, you can play one or several episodes.
+
+    <p>During the session,  you will be able to type
+<a href="#commands">commands</a> on the console, and the program will send the output to your screen. Type HELP to see the list of command, or EXIT to exit. 
+    </p>
+
+    <p>To use the CGS with your ML program, use the standard mechanism for spawning a child process, starting the script (captive-full.sh, captive-standard.sh, or captive-brief.sh), or the underlying Java program, as a child process from your program, with appropriate command-line arguments. You can capture the CGS's standard input and standard output via pipes, and communicate with it via writing into one pipe and reading from the other.</p>
+
+    <h3><a name="optionFormat">Command-line option format</a></h3>
+
+<p>A number of options (name-value pairs) will be discussed below. For all of them, there are two alternative ways of passing them to the CGS, e.g.
+  <pre>
+    java -Dlog=foo.csv edu.wisc.game.engine.Captive ....
+  </pre>
+  or
+<pre>
+    java edu.wisc.game.engine.Captive log=foo.csv ....
+</pre
+
+  <p>The latter format is more convenient if you are passing the options through a shell script, e.g.
+ <pre>
+    ./captive-full.sh log=foo.csv ....
+</pre
+   
+  
+    <h3><a name="argv">Command-line parameters: specifying the rule set and the initial board</a></h3>
+
+    <p>The command line arguments for the scripts such as <tt>captive-full.sh</tt> are the same as for the underlying Java program, <tt>edu.wisc.game.engine.Captive</tt>. These arguments are used to specify, directly or indirectly, two things:
+      <ul>
+	<li>The rule set to be used in all episodes of the session.
+	<li>The initial boards used in each episode.
+      </ul>
+      There are several ways to provide this information, as illustraed below. In examples 1 thru 6, the first argument is the rule set file, specified as either a relative path (relative to the current directory), or an absolute path; it is followed by arguments specifying the initial board(s) for the session's episodes, in one of several ways. In example 7, the first argument is a trial list file, which contains information that both specifies the rule set and the initial board generation process.
+      </p>
+
+    <p>In Game Server 2.*, the designers of human-subject experiments have a wide choice of  experiment plan structures. Each parameter set in their trial lists may define a 6-paramter random board generator (specifying ranges of the number of pieces, the number of shapes, and the number of colors), with legacy or custom colors and shapes. Alternatively, a parameter set may define a sequence of predefined boards. Whichever structure the the parameter set has, using one of the methods described above will ensure that the captive server uses exactly the same random board generation process as is used by web-based Game Server in the human-subject experiments.</p>
+
+      
+      <h4>1. Specify a pre-defined board file identified by name</h4>
+
+      <p>
+	<pre>
+cd ~/captive/game	  
+./captive-full.sh game-data/rules/farthest.txt game-data/boards/four-corners.json 
+	</pre>
+	If you do that, every episode in your session will start with the same identical initial board.
+	
+      <h4>2. Specify only the number of pieces, as a single number</h4>
+ 	<pre>
+./captive-full.sh game-data/rules/farthest.txt 3
+	</pre>
+	In this example, every episode will start with a random board with the same number (3) pieces. The shapes and colors of each piece will be selected independently from each other from the entire set of shapes and colors available, which means that the number of shapes and colors will vary in each episode over the entire possible range.
+      </p>
+      
+      <h4>3. Specify only the number of pieces, as a single number or a range</h4>
+      <p>
+      <pre>
+./captive-full.sh game-data/rules/farthest.txt 2:4
+      </pre>
+	In the above example, for each episode the number of pieces will be selected randomly, with a uniform distribution, from the speciified range, meaning that, on average, one-third of all initial boards will have 2 pieces, one-third will have 3, and one-third will have 4.
+      </p>
+      
+      <h4>4. Specify the number of pieces, the number of shapes, and the number of colors, as single numbers</h4>
+      <p>
+ 	<pre>
+ ./captive-full.sh game-data/rules/farthest.txt 5 2 3
+	</pre>
+	In the above example, every initial board will have 5 pieces, with exactly 2 distinct shapes and 3 distinct colors
+      </p>
+      
+      <h4>5. Same as the above, but with using ranges for any of the three quantities.</h4>
+
+      <p>
+      Ranges and single numbers can be combined in arbitrary ways; essentially, a single number <em>n</em> is equivalent to the range <em>n</em>:<em>n</em>. E.g.
+  	<pre>
+./captive-full.sh game-data/rules/farthest.txt 5 1:3 3:4
+	</pre>
+	In the above example,  every initial board will have 5 pieces, with 1, 2, or 3 distinct shapes (with equal probability) and 3 or 4 distinct colors.
+      </p>
+
+      <p>When using ranges, make sure that the upper bound of range of the number of shapes the upper bound of the range of the number of colors do not exceed the lower bound of the range of the number of pieces. Otherwise, the random board generator may be occasionally faced with an impossible task of creating a board which has more distinct colors or shapes than it has pieces!</p>
+      
+      <h4>6. Same as the above, but with custom shapes and/or custom colors.</h4>
+
+      <p>
+To specify the sets from which colors and/or shapes will be drawn by the initial board generator, you can add additional parameters <tt>colors=...</tt> and/or  <tt>shapes=...</tt> to the command line. The values of the parameters are semicolon-separated lists of colors and/or shapes, respectively. Make sure to use single quotes as shown below, since semicolons would be interpreted by the UNIX shell as command separators otherwise.
+	   <pre>./captive-full.sh /opt/tomcat/game-data/rules/arrows/rule-01.txt 3 2 2 'colors=red;pink' 'shapes=arrows/arrow-up-left;arrows/arrow-up-right;arrows/arrow-down-right;arrows/arrow-down-left'
+	   </pre>
+      </p>
+
+<P>One is allowed to use <tt>*</tt> to mean "use all shapes for which SVG files exist in the appropriate subdirectory of the main shapes directory". Thus, <tt>'shapes=arrows/*;weather/*'</tt> is equivalent to listing every shape from  <tt>/opt/tomcat/game-data/shapes/arrows</tt> and <tt>/opt/tomcat/game-data/shapes/weather</tt>
+      
+      <p>
+	If you're using custom shapes and/or custom colors, it is necessary that a list of colors and a set of shapes SVG files are found at the appropriate locations under <tt>/opt/tomcat/game-data</tt>, as explained in the document <a href="colors-and-shapes.html">Using custom shapes and colors in Rule Game Server 2.*</a>. If you're running your Captive Game Server on <tt>sapir</tt> (the server used for the human subjects), and are playing a game that human subjects are already playing, then you're all set, because the human-player experiment team has already set up the necessary files in   <tt>/opt/tomcat/game-data</tt>. If you're running  your Captive Game Server on another host, you may choose to create a copy of sapir's <tt>/opt/tomcat/game-data</tt> directory with control files on your host,
+<!--
+    , either by copying the files directly, or (in the future) by checking out the experiment controle files from Aria's GitHub repository. (Ask Aria for details). -->
+or you can use <tt>~/captive/game/game-data</tt> as you control file directory.
+      </p>
+      
+	<p>
+	   If the root of your server data directory is somewhere else than in <tt>/opt/tomcat/game-data</tt> directory, you can specify this  by an additional parameter on the command line. This can be specified with e.g. <tt>-inputDir ~/captive/game/game-data</tt> as a parameter to a script such as <tt>captive-full.sh</tt>, or with <tt>-DinputDir=~/captive/game/game-data</tt> as a parameter to <tt>java</tt> in your own shell script.  (Alternatively, the same effect can be achieved by setting the value of the variable  <tt>FILES_GAME_DATA</tt> in the  <a href="setup/setup-config.html">master config file</a>).
+
+	</p>
+	
+	<h4>7. Use a trial list file</h4>
+
+	<p>
+	  This is the easiest way to emulate the behavior of the web-based Game Server (with which humans play). To do this, you can specify a <a href="data.html#trialList">trial list file</a> and the (1-based) row number, e.g.
+<pre>./captive-full.sh /opt/tomcat/game-data/trial-lists/vmColorTest/trial_1.csv 1
+</pre>
+The CGS figures the file type based on the extension: the ".csv" extension means you are providing a trial list file, while the ".txt" extension (as in items 1 thru 6, above) refers to a rule set file.</p>
+
+	<p>Any of the valid trial list files prepared by our human-subject experiment team can be used with the CGS. To decide which games you want to play, you may ask Gary or Aria about various trial list files that can be found in the trial list directory, <tt>/opt/tomcat/game-data/trial-lists</tt> on sapir.</p>
+
+	<p>
+	  The CGS will read the trial list file and extract the parameter set with the specified number. It will then create a game generator with the same parameters that the web-based Game Server would use when running on that parameter set; depending  <a href="para-set.html">on the parameter set</a>, that may involve random initial boards (with appropriate shapes, colors, and number of pieces) or predefined initial boards. As you play more episodes (starting each episode, after the first one, with the <a href="#cmd.new"><tt>NEW</tt></a> command), the CGS will generate a sequence of initial boards in the same way as a web-based Game Server would, i.e. eiher randomly or by following a prescribed sequence of predefined boards. As in the web-based Game Server, the rule set specified in that parameter set will be used in each episode.</p>
+
+	<p>
+Since the trial list file implicitly refers to files in various directories under the server data directory (by default, <tt>/opt/tomcat/game-data</tt>), you must either have that directory, with all relevant files, on your computer, or use the <tt>-inputDir</tt> parameter on the command line, just as in Example 6 above.
+    </p>
+
+	<h4>8. Combine a rule set file and a modifer file</h4>
+
+<P>Since Captive Game Server 5.003, it is possible to combine a rule set file with a "modifier file", which is like a trial list file, but only has columns for the parameters you need for the initial board generation. One can call it a <em>pro forma</em> trial list file.
+  (If you are also configuring games for human players on the web-based Game Server, you will realize that this is very similar to the technique knowns as the <a href="concepts.html#sd">R:-type dynamic experiment plan in that space</a>).
+
+<p>
+  The syntax is, you put
+  <pre>
+    R:<em>ruleSet</em>:<em>modifier</em>
+  </pre>
+as the main argument on your command line. Both  <em>ruleSet</em> and <em>modifier</em> can be specified as absolute file paths (i.e. starting with a <tt>/</tt> or with a <tt>~</tt>). Alternatively, you can use the <tt>inputDir</tt> parameter to specify the root input data directory; if you do that, the  <em>ruleSet</em> and <em>modifier</em> can be specified as relative paths, relative to the <tt>rules</tt> and <tt>modifiers</tt> subdirectories of the  input data directory.
+
+<p>Here's an example, which uses a sample rule set file (<tt>game-data/rules/MLC/BMK/colOrd_nearby.txt</tt>) and a sample modifier file that we distribute for the <a href="mlc/mlc-guide.html">The Machine Learning Challenge (MLC)</a>
+	   participants:
+       
+<pre>
+  cd ~/w2020/game     
+  ./captive-full.sh inputDir=game-data R:MLC/BMK/colOrd_nearby.txt:MLC/BMK/bmk.csv
+</pre>
+
+
+    <h3>Specifying the random generator seed</h3>
+
+    <p>
+      Starting in ver. 1.026, it is possible to specify the seed of the random number generator, so that the same random boards would be generated on repeated runs. To do that, insert  <tt>-Dseed=N</tt> (where N is a positive integer) into the Java command found in a script such as <tt>captive-full.sh</tt>, or used during the child-process spawning in your ML application. For example, you can modify the last line of this script to look as follows:
+<pre>      
+  java -Dseed=1 -Doutput=FULL edu.wisc.game.engine.Captive  $argv[1-]
+</pre></p>    
+
+    <p>It is also possible to specify the seed on the command line as follows:
+<pre>      
+ ./captive-full.sh /opt/tomcat/game-data/rules/MLC/vm/test-05.txt 3 seed=5
+</pre>
+
+<p>Passing the seed value <tt>0</tt> will start the random number generator with a random seed (i.e. it will produce a different sequence of random numbers on different runs).
+
+<h3>Generating a results file</h3>
+
+<p>For the convenience of <a href="mlc/mlc-guide.html">MLC</a> participants, you can get the Captive Game Server produce a results file, each line of which will record the outcome of one episode. Sample usage:
+
+<pre>  
+  ./captive-full.sh inputDir=game-data log=sample.csv log.nickname=JohnDoe log.run=0  R:MLC/BMK/colOrd_nearby.txt:MLC/BMK/bmk.csv
+</pre>
+
+<p>Here,
+  <ul>
+    <li><tt>log=sample.csv</tt> specifies the file to which the results will be written. Instead of <tt>log=...</tt> you can use  <tt>log.append=...</tt>, in which case the data will be appended to the file, rather than overwritten.
+    <li><tt>log.nickname=JohnDoe</tt> specifies the value that will go into the first column of the results file (<tt>nickname</tt>). This is used to identify the ML application that's playing with the CGS, or the research team who produced the application.
+    <li><tt>log.run=0</tt> specifies the sequential number of your run, within the sets of runs you carry out for a particular rule set. The numbers should start with 0.
+  </ul>
+
+  <p>Below is an example of a results file that has been generated after 2 runs:
+<pre>
+nickname,rule_name,trial_id,board_id,number_of_pieces,number_of_moves,move_acc,if_clear
+JohnDoe,colOrd_nearby,0,0,9,3,1.0,0
+JohnDoe,colOrd_nearby,0,1,9,1,1.0,0
+JohnDoe,colOrd_nearby,0,2,9,1,1.0,0
+JohnDoe,colOrd_nearby,1,0,9,0,0.0,0
+JohnDoe,colOrd_nearby,1,1,9,9,1.0,1
+JohnDoe,colOrd_nearby,1,2,9,2,0.5,0
+</pre>
+
+  
+<h2>Your Machine Learning application talking to the CGS</h2>
+
+    <p>It is likely that you have installed the CGS so that your ML application can "play" with it. Since the pipe-based CGS interacts with your ML application via pipes, the general idea is as following:
+      <ul>
+	<li>Your ML app spawns the CGS as a child process.
+	<li>Your ML open an output stream asociated with the stdin of the CGS, and an input stream associated with the stdout of the CGS.
+	<li>Your ML writes its commands to the output stream, and reads the CGS's response via the input stream.
+      </ul>
+
+      <p>Additional details are found below.
+
+<h3>Talking to the CGS from a Java application</h3>
+
+    
+    <p>If your ML application is in Java, you can use the <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/ProcessBuilder.html">ProcessBuilder</a> API to spawn child processes and deal with their I/O. You create a <tt>Process</tt> object, write your commands to the stream returned by <tt>Process.getInputStream()</tt>, and read responses from the stream returned by <tt>Process.getOutputStream()</tt></p>
+
+    <h3>Talking to the CGS from a Python application</h3>
+    
+    <p>If your ML application is in Python, you can use <a href="https://docs.python.org/3/library/subprocess.html">subprocess.run</a> for the same purpose.</p>
+
+   <p>For the convenience of ML researchers who may want their ML application written in Python to use the CGS, we provide a sample Python client that spawns a CGS and communicates with it via pipes.
+      </p>
+
+    <p>To see how this works, run the script
+      <pre>
+	./captive-python.sh
+      </pre>
+      with no arguments. It will set the CLASSPATH as needed to include all relevant JAR files, and will then invoke <tt>python/client.py</tt> with some arguments (rule file and piece count), which in its turn will spawn a CGS and play an episode of the specified game with it, communicating via pipes. The script  <tt>python/client.py</tt> can take all other command-line arguments that the shell scripts discussed above do.
+    <p>
+
+    <p>You may want to modify the script <tt>captive-python-socket.sh</tt> as needed to use a different rule file.</p>
+
+    <p>In the Python code, after <tt>python/client.py</tt> spawns the CGS process, it uses code from <tt>python/gameLoop.py</tt> to do the actual communication and playing. In the latter file, the method <tt>chooseMove()</tt> is the one deciding on the next move. In the sample code, the move is done by picking
+      <!-- the first moveable -->
+      a random
+      piece and trying to put it to a randomly chosen bucket; in a real ML application, some appropriate learning logic would appear here instead.</p>
+
+<p>Below is the console output from a sample session (from a different, earlier version of gameLoop.py, which "cheats" a bit by going only for moveable pieces).</p>
+      
+<pre>
+:~/w2020/game&gt; ./captive-python.sh
+Rule file=./rules/rules-01.txt, #pieces=5
+Received: 6 0 0
+Received: # Hello. This is Captive Game Server ver. 1.003. Starting a new game (no. 1)
+Received: {"id":0,"value":[{"id":0,"color":"BLACK","shape":"SQUARE","x":2,"y":3,"buckets":[]},{"id":0,"color":"RED","shape":"SQUARE","x":6,"y":4,"buckets":[]},{"id":0,"color":"RED","shape":"SQUARE","x":5,"y":5,"bu
+ckets":[]},{"id":0,"color":"YELLOW","shape":"STAR","x":1,"y":6,"buckets":[0]},{"id":0,"color":"RED","shape":"TRIANGLE","x":3,"y":6,"buckets":[]}]}
+Code=6, status=0, stepNo=0
+5 pieces still on the board
+Sending: MOVE 6 1 0 0
+Received: 4 0 1
+Received: {"id":0,"value":[{"id":0,"color":"BLACK","shape":"SQUARE","x":2,"y":3,"buckets":[]},{"id":0,"color":"RED","shape":"SQUARE","x":6,"y":4,"buckets":[]},{"id":0,"color":"RED","shape":"SQUARE","x":5,"y":5,"bu
+ckets":[]},{"id":0,"color":"YELLOW","shape":"STAR","x":1,"y":6,"buckets":[0]},{"id":0,"color":"RED","shape":"TRIANGLE","x":3,"y":6,"buckets":[]}]}
+Code=4, status=0, stepNo=1
+5 pieces still on the board
+Sending: MOVE 6 1 0 0
+Received: 4 0 2
+Received: {"id":0,"value":[{"id":0,"color":"BLACK","shape":"SQUARE","x":2,"y":3,"buckets":[]},{"id":0,"color":"RED","shape":"SQUARE","x":6,"y":4,"buckets":[]},{"id":0,"color":"RED","shape":"SQUARE","x":5,"y":5,"bu
+ckets":[]},{"id":0,"color":"YELLOW","shape":"STAR","x":1,"y":6,"buckets":[0]},{"id":0,"color":"RED","shape":"TRIANGLE","x":3,"y":6,"buckets":[]}]}
+Code=4, status=0, stepNo=2
+5 pieces still on the board
+Sending: MOVE 6 1 7 0
+Received: 0 0 3
+Received: {"id":0,"value":[{"id":0,"color":"BLACK","shape":"SQUARE","x":2,"y":3,"buckets":[]},{"id":0,"color":"RED","shape":"SQUARE","x":6,"y":4,"buckets":[]},{"id":0,"color":"RED","shape":"SQUARE","x":5,"y":5,"bu
+ckets":[]},{"id":0,"color":"RED","shape":"TRIANGLE","x":3,"y":6,"buckets":[0,1]}]}
+Code=0, status=0, stepNo=3
+4 pieces still on the board
+  .... .... ....
+1 pieces still on the board
+Sending: MOVE 3 2 0 7
+Received: 4 0 11
+Received: {"id":0,"value":[{"id":0,"color":"BLACK","shape":"SQUARE","x":2,"y":3,"buckets":[3]}]}
+Code=4, status=0, stepNo=11
+1 pieces still on the board
+Sending: MOVE 3 2 0 0
+Received: 0 1 12
+Received: # Game finished - the board is clear
+Received: {"id":0,"value":[]}
+Code=0, status=1, stepNo=12
+Cleared board in 12 steps
+</pre>
+
+<h4>Python version</h4>
+
+    <p>The sample python app described above begins with the line
+<pre>
+  #!/usr/bin/python
+</pre>
+, which means that it will use whichever Python executable you have at that location. We have tested it both with Pyton 2 (specifically Python 2.7.17) and Python 3 (specicically Python 3.6.9). If the Python executable is installed at a different location on your system, you may need to edit the first line of this Pythin script (and any other Python scripts with a similar line) as appropriate.
+
+
+<h4>Sample Python app that also does MLC logging</h4>
+
+    <p>We have provided a sample shell script for the  <a href="mlc/mlc-guide.html">Machine Learning Challenge (MLC)</a> participants who wants their ML program to play with the Captive Game Server and to save a results file for submission to the MLC Leader Board. The can model their scripts on the <tt>csh</tt> script
+      <tt>scrupts/captive-python-mlc.sh</tt>, which in its turn uses
+      <tt>python/client-2.py</tt>.
+
+    <p>Usage:
+      <pre>
+	~/w2020/game/scripts/captive-python-mlc.sh
+      </pre>
+
+    <p>If you are an <a href="mlc/mlc-guide.html">MLC</a> participants, you may want to read this script (and the Python scripts it invokes), and insert functionally similar code into your application, so that it gets the CGS to generate necessary results files.
+      
+    <p>If you look inside this script, you'll see that it:
+      <ul>
+	<li>Lists all rule files from <tt>game-data/rules/MLC/BMK</tt>;
+	<li>For each file, it makes 2 runs, by invoking
+<pre>
+  python/client-2.py inputDir=${in} logappend=${log} log.nickname=RandomTest log.run=${run} R:${r}:MLC/BMK/bmk.csv </pre>
+with appropriate values for the shell variables in question.
+      </ul>
+
+    <p>In each run, the script <tt>python/client-2.py</tt> runs 5 episodes. Thus, the results file (test.csv) has 10 lines for each of the 15 rule set files. The results file may look like this:
+      <pre>
+nickname,rule_name,trial_id,board_id,number_of_pieces,number_of_moves,move_acc,if_clear
+RandomTest,alternateShape2Bucket_color2Bucket,0,0,9,29,0.3103448275862069,1
+RandomTest,alternateShape2Bucket_color2Bucket,0,1,9,20,0.45,1
+RandomTest,alternateShape2Bucket_color2Bucket,0,2,9,70,0.12857142857142856,1
+RandomTest,alternateShape2Bucket_color2Bucket,0,3,9,39,0.23076923076923078,1
+RandomTest,alternateShape2Bucket_color2Bucket,0,4,9,55,0.16363636363636364,1
+RandomTest,alternateShape2Bucket_color2Bucket,1,0,9,36,0.25,1
+RandomTest,alternateShape2Bucket_color2Bucket,1,1,9,58,0.15517241379310345,1
+RandomTest,alternateShape2Bucket_color2Bucket,1,2,9,21,0.42857142857142855,1
+RandomTest,alternateShape2Bucket_color2Bucket,1,3,9,63,0.14285714285714285,1
+RandomTest,alternateShape2Bucket_color2Bucket,1,4,9,25,0.36,1
+RandomTest,colOrd_nearby,0,0,9,111,0.08108108108108109,1
+RandomTest,colOrd_nearby,0,1,9,137,0.06569343065693431,1
+RandomTest,colOrd_nearby,0,2,9,76,0.11842105263157894,1
+...
+      </pre>
+
+    <p>The sample Python screen is a fairly poor player, as it makes its moves completely at random (picking a random game piece and trying to move it to a randomly chosen bucket). If your ML program is any good, you should hope to obtain, on average, better values of <tt>move_acc</tt>, at least once it has learned something!
+      
+
+    <h2>Game description</h2>
+
+<em><p>This section is somewhat obsolete and mostly superfluous now, as a more detailed and updated description of the rule file syntax is <a href="syntax.html">now available elsewehere.</a></em>
+    
+    <P>A few game rule description files have been supplied in  <tt>/home/vmenkov/captive/game/rules/</tt>. The rule description language is mostly described in a document that Paul has posted on Google Docs; ask him for a share link. There are some extensions to this language though. In particular:
+
+      <ul>
+	<li>Lines starting with a <tt>#</tt> character are comments (purely for human readers, ignored by the engine)
+	<li>The rule lines may be preceded by any number of order definition lines, e.g.
+	  <pre>
+Order Manchu=[31, 25, 19, 13, 7, 1, 32, 26, 20, 14, 8, 2, ....]
+Order fromOutsideIn=[ [1,2,3,4,5,6, 7,13,19,25, 31,32,33,34,35,36, 30,24,18,12], [8,9,10,11, 14,20, 26,27,28,29, 23,17], [15,16,21,22]]
+	  </pre>
+	  The first line defines an order named <tt>Manchu</tt>,  according to which one must first pick objects in the order in which one reads Manchu or Mongol script, i.e. by column, the columns being arranged from left to right.
+	  The second line defines an order named <tt>fromOutsideIn</tt>, according to which one must first pick objects from the cells adjacent to the edge of the square, etc, toward the center.
+	<li>Any rule line may start with an integer (global counter). If provided, this rule line can be used at most this many times before the control goes to the next line.
+	<li>After the optional global counter, the line must have one or several rule "atoms". Each atom has the format
+	  <pre>
+	  (counter,shape,color,positionList,bucketFunctions) 
+	  </pre>
+	  For example, the rule
+	  <pre>
+	    (*,star,*,fromInsideOut,[0])
+	  </pre>
+	  says that any number of stars of any color can be picked, as long as they are among the "most inside" pieces of all pieces on the board; once picked, they must be put into bucket no. 0.
+	<li>The buckets are numbered clockwise starting from the <strong>top left</strong>. This is in agreement with the current functionality in Paul's and Kevin's GUI app, rather than with Jerry's specs. This, bucket 0 is (7, 0), bucket 1 is (7,7) etc.
+</ul>	 
+
+    <p>For more information, see the detailed guide for the <a href="syntax.html">Rule file syntax and semantics</a>.
+
+      
+<h2><a name="commands">Commands (input) and output</a></h2>
+
+<p>The input to CGS consists of one-line commands, some with arguments. The output consists of "comment lines" (intended for debugging or human consumption), preceded with '#', and data lines, which do not have a '#'. Your ML program should ignore all comment lines.
+
+<p>Three output modes are available: brief, standard, and full. The full mode contains a large number of comment lines (in particular, a graphic board display); the other two modes don't have comment lines, or only have very few of them. The CGS can be started in any of these modes using one of the 3 scripts provided (captive-full.sh, captive-standard.sh, or captive-brief.sh).
+
+  <h2>The CGS API</h2>
+
+<p>The following are the commands you'll need</p>
+
+<p><strong>The implicit "NEW" command:</strong> when you start the CGS, an episode starts immediately, and you get 2 lines of output right away which are in the same format as for the "NEW" command (below).
+
+<p>
+<a name="cmd.new"><pre><strong>NEW</strong></pre></a>
+
+    <p>
+    Starts a new episode. You don't need this command at the very beginning of a session, since the first episode starts automatically. Use this command for every subsequent game. This command can be used after the previous episode has completed (with a "win" (clearing the board) or a stalemate (no piece can be moved anymore); it can also be used in the middle of an episode if you give up and want to start a new one.
+
+    <p>Response: two lines. The first line contains 3 numbers, as described in the "MOVE" section below, reflecting the acceptance of the command and the current state. The second line describes the current display. It is in JSON format, and looks as follows:
+<br>
+<tt>      
+  {"id":0,"value":[{"id":0,"color":"BLUE","shape":"CIRCLE","x":4,"y":1,"buckets":[]},{"id":0,"color":"RED","shape":"CIRCLE","x":4,"y":3,"buckets":[0]},{"id":0,"color":"BLUE","shape":"SQUARE","x":3,"y":5,"buckets":[]},{"id":0,"color":"YELLOW","shape":"CIRCLE","x":3,"y":6,"buckets":[]}]}
+</tt>
+<br>
+Here, at the top level the only field that matters is "value". Its value is an array, each elements represents a piece. For example, the piece described as <TT>
+{"id":0,"color":"RED","shape":"CIRCLE","x":4,"y":3,"buckets":[0]}</tt> has color RED, shape CIRCLE, is located in row 3, column 4. The field "buckets" is an array containing the list of buckets (see above for numbering!) into which this piece can be moved. If the array size is zero, it means that the piece is not moveable. It is up to your program and its "honor system" to which extent it wants to look into this array!
+
+
+<p>
+  <pre><strong>DISPLAY</strong></pre>
+
+      <p>Response: one line, displaying the current board in the JSON format, in the same format as in the NEW command.</p>
+
+<p>
+  <pre><a name="move"><strong>MOVE row col B_row B_col</strong></a></pre>
+
+      This command attempts picks the piece located at (row,col), and to move it to the bucket at (B_row, B_col). The values for the first two coordinates can be in the range [1..6]; the values for each of the last two coordinates must be 0 or 7.
+      
+      <p>Response: two lines (in the standard mode) or one line (in the brief mode). The first line contains 3 numbers, as follows:
+<pre>
+  response_code game_state move_count
+</pre>
+
+The response_code is 0 for acceptance (successful move), positive for rejection (command is understood and is legal, but the move is denied), negative for an error (command arguments are not legal). More specifically:
+<pre>
+
+    public static class CODE {
+	public static final int
+	// move accepted and processed
+	    ACCEPT = 0,
+	// Move rejected, and no other move is possible
+	// (stalemate). This means that the rule set is bad, and we
+	// owe an apology to the player
+	    STALEMATE=2,
+	// move rejected, because there is no piece in the cell
+	    EMPTY_CELL= 3,
+        // Move rejected, because this destination is not allowed
+        // (even though the piece can perhaps be moved to some other bucket)
+	    DENY = 4,
+	// Exit requested
+	    EXIT = 5,
+	// New game requested
+            NEW_GAME = 6,
+        // Move rejected, because this game piece is immovable (cannot
+        // be moved to any bucket).
+	    IMMOVABLE = 7;
+
+    
+	
+	public static final int
+	    INVALID_COMMAND= -1,
+	    INVALID_ARGUMENTS= -2,
+	    INVALID_POS= -3,
+	// No game is on now. Start a game first!
+	    NO_GAME = -4,
+	// Used in socket server GAME  command
+	    INVALID_RULES = -5,
+	// Used in web app, when trying to access a non-existent episode
+	    NO_SUCH_EPISODE = -6,
+	// The number of preceding attempts does not match. This may indicate
+	// that some HTTP requests have been lost, or a duplicate request
+            ATTEMPT_CNT_MISMATCH = -7,
+    	// This code is returned on successful DISPLAY calls, to
+	// indicate that it was a display (no actual move requested)
+	// and not a MOVE	    
+	    JUST_A_DISPLAY = -8;
+
+   }	    
+</pre>
+
+<p><strong>Note:</strong> Prior to GS 5.007 (July 2022), response code 7 (<tt>IMMOVABLE</tt>) did not exist, and attempts to move an immovable game piece resulted in response code 4 (<tt>DENY</tt>). These two codes have been "split" since GS 5.007 in order to enable a ML program to identify an immovable game piece in a single move attempt (rather than 4 attempts). This will make robots' playing experience more similar to that of humans playing via the web GUI, who can identify immovable pieces in a single attempt.
+
+
+<p>
+The second number, the <strong>finish code</strong> reports the current state: 0=can play (there are pieces on the board, and some can be moved), 1=finish (no pieces left on the board), 2=stalemate (there are pieces on the board, but none of them can be moved anymore).
+
+<p>The third number is the move count, i.e. the total number of attempted and successful moves in this episode so far.
+
+<p>In the standard mode, the status line is followed by a line with the description of the current display, in the same format as in the NEW command. In the brief mode, this line is omitted. You can use the brief mode if your program keeps track of the board itself, and you want to reduce the cost of communication with the CGS.
+
+<p>
+  <pre><strong>EXIT</strong></pre>
+
+<p>
+  <pre><strong>HELP</strong></pre>
+
+<p>
+  <pre><strong>VERSION</strong></pre>
+  
+  <h2>Human-readable output</h2>
+
+<p>In the "full" output mode, human-readable display is printed with each "DISPLAY", "NEW", or "MOVE" command, as a number of comment lines. In the other modes, the same display is available with the "DISPLAYFULL" command.</p>
+
+<p>The following notation is used: O, #, T, * are circles, squares, triangle, and stars, respectively. The color is either not marked at all, or is expressed by a lowercase letter (bLACK, yELLOW, rED, and g for BLUE).  Dots are empty cells. Round parentheses () surround pieces that can be moved presently. Square bracket surround the cell to which the last MOVE was applied; the cell will be empty [.] if the move was successful (the piece has been removed), or non-empty, e.g. [O], if the move was rejected.</p>
+
+    <h2>Logging</h2>
+
+    <p>Until ver 5.003, there was no logging. The ML program was to count its games, and to record displays (e.g. the initial boards) if it so desires.
+
+    <p>Some elementary logging (one line per episode) was introduced in CGS 5.003; see above.
+
+
+      <h2>Socket interface</h2>
+
+    <p>An alternative way of running CGS is as a process in a separate console window (or even by a different user, or on a different host) and communicating with it over the socket interface. Unlike the "normal" CGS, the socket game server can serve multiple clients, with a different game rule set for each one; however, the client-server session facing each client (and running in a separate thread) is still completely controlled by the client and thus can still be described as "captive".</p>
+
+    <h3>Starting the socket-based CGS</h3>
+
+    <p>In a new console window, run the script <tt>socket-server.sh</tt> with the desired port number as an argument, e.g.
+      <pre>
+	~/w2020/game&gt;    ./socket-server.sh 7501
+      </pre>
+    </p>
+
+    <p>The socket server will normally not produce any messages, other than reports on rule set files being read at the beginning of each session, if everything goes on normally. Any error messages will go to the screen.</p>
+
+    <p>At this point (ver 1.003) there is no inactive session management in the server, so the clients ought to close their sessions as appropriate. When you don't need the server running anymore, you can kill it with Ctrl-C, or with a <tt>kill</tt> command.</p>
+
+    <h3>The socket-based CGS API</h3>
+
+    <p>The only difference from the normal (pipe-based) CGS API is that the socket CGS has one more command, 
+      <pre><strong>GAME <em>"rule-file.txt" nPieces</em></strong></pre>
+      e.g.
+      <pre><strong>GAME "rules/rules-01.txt" 5</strong></pre>
+(The quotes around the file name are optional)
+</p>
+
+    
+    <p>This command must be used as the first command of the session. It specifies the rule set file to use (the rule file name can specify the absolute file name on the server, or a path relative to the directory where the server was started), and the number of pieces. These arguments are analogous to those used on the command line when starting a pipe-based CGS; however, the rule file name must be double-quoted.</p>
+
+    <p>As of ver. 4.002, the GAME command in the socket CGS API can also use various other arguments, in the same way as they can be used on the command line of a pipe-based CGS (See Examples 1 thru 7 in <a href="#argv">Command-line parameters</a>).  For example:
+<pre><strong>GAME rules/rules-01.txt 5 1:2 1:3</strong></pre>
+or
+<pre><strong>GAME /opt/tomcat/game-data/trial-lists/vmColorTest/trial_1.csv 1</strong></pre>
+    </p>
+    
+    <P>After the <tt>GAME</tt> command is sent, the socket CGS behaves exactly like the pipe-based CGS does; it reads in a rule set file and any other required control files, and starts the first episode, sending back to the client the status line and the JSON display line. Thereafter, the same commands (<tt>MOVE</tt>, <tt>NEW</tt>,  and finally <tt>EXIT</tt>) should be used by the client to play a desired number of episodes, exactly as their are in the pipe-based CGS.</p>
+    
+    <h3>Talking to the socket CGS from the console</h3>
+
+    <p>You can test the socket CGS by running the telnet command on the appropriate port, e.g.
+
+      <pre>
+	telnet localhost 7501
+      </pre>
+    </p>
+    <p>You can then enter the <tt>GAME</tt> command, followed by <tt>MOVE</tt>, <tt>NEW</tt>,  and <tt>EXIT</tt> as appropriate. For example:
+
+<pre>      
+:~&gt; telnet localhost 7501
+Trying 127.0.0.1...
+Connected to localhost.
+Escape character is '^]'.
+GAME "rules/rules-01.txt" 2
+6 0 0
+# Hello. This is Captive Game Server ver. 1.003. Starting a new game (no. 1)
+{"id":0,"value":[{"id":0,"color":"BLUE","shape":"TRIANGLE","x":6,"y":5,"buckets":[]},{"id":0,"color":"RED","shape":"TRIANGLE","x":1,"y":6,"buckets":[0]}]}
+MOVE 6 1 7 0
+0 0 1
+{"id":0,"value":[{"id":0,"color":"BLUE","shape":"TRIANGLE","x":6,"y":5,"buckets":[1]}]}
+MOVE 5 6 7 7 
+0 1 2
+# Game finished - the board is clear
+{"id":0,"value":[]}
+NEW
+6 0 0
+# Hello. This is Captive Game Server ver. 1.003. Starting a new game (no. 2)
+{"id":0,"value":[{"id":0,"color":"BLUE","shape":"TRIANGLE","x":5,"y":1,"buckets":[2]},{"id":0,"color":"YELLOW","shape":"CIRCLE","x":6,"y":5,"buckets":[1]}]}
+....
+EXIT
+5 0 0
+# Goodbye
+Connection closed by foreign host.
+</pre>  
+
+   <h3>Talking to the socket CGS from a Python client</h3>
+
+    <p>For the convenience of ML researchers who may want their ML application written in Python communicate with the socket CGS, we provide a sample Python client doing exactly that.
+      </p>
+
+    <p>To see how this works, run the script	<tt>captive-python-socket.sh</tt>, indicating the host and port to connect, and the game to play, e.g.:
+      <pre>
+	 ./captive-python-socket.sh localhost 7501 /opt/tomcat/game-data/rules/Rule-001.txt 4
+      </pre>
+ It will set the CLASSPATH as needed to include all relevant JAR files, and will then invoke <tt>python/client-socket.py</tt> with the same arguments (host name, port number, rule file and piece count), which opens a socket connection and plays an episode of the specified game.
+    <p>
+
+      <p>You may want to modify the script <tt>captive-python-socket.sh</tt> as needed to use a different host, port, or rule file.</p>
+
+
+</body>
+					  
+</html>

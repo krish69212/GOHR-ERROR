@@ -1,0 +1,2 @@
+# [Quadrant Nearby] Each quadrant is mapped to nearest bucket
+(*,*,*,*,Nearby)

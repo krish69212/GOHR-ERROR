@@ -1,0 +1,3 @@
+# [Clockwise] Permitted bucket moves in clockwise order
+(1,*,*,*, 0)
+(*,*,*,*, p+1)

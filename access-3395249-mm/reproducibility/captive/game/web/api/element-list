@@ -1,0 +1,12 @@
+edu.wisc.game.engine
+edu.wisc.game.formatter
+edu.wisc.game.math
+edu.wisc.game.parser
+edu.wisc.game.reflect
+edu.wisc.game.rest
+edu.wisc.game.saved
+edu.wisc.game.sql
+edu.wisc.game.svg
+edu.wisc.game.tools
+edu.wisc.game.util
+edu.wisc.game.web

@@ -1,0 +1,11 @@
+ 1954  cut -d , -f 12 summary-flat.csv  > n-flat.tmp
+ 1955  cut -d , -f 12 summary-p0-COMPLETELY_RANDOM.csv  > n-random.tmp
+ 1956  cut -d , -f 12 summary-p0-MCP1.csv  > n-mcp1.tmp
+ 1957  wc n-*
+ 1958  diff n-flat.tmp n-random.tmp 
+ 1959  diff n-flat.tmp n-mcp1.tmp 
+ 1960  diff n-flat.tmp n-mcp1.tmp |wc
+ 1961  paste n-flat.tmp n-mcp1.tmp |more
+ 1962  paste n-flat.tmp n-mcp1.tmp > diff.tmp
+ 2012  history |grep n-
+ 2014  history |grep n-> t.tmp

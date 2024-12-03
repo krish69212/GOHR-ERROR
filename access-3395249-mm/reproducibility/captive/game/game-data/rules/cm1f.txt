@@ -1,0 +1,2 @@
+# [Color Match 1 Free] Each bucket collects pieces of one color, with one free color
+(*,*,black,*,0) (*,*,yellow,*,1) (*,*,red,*,[0,1,2,3]) (*,*,blue,*,3)

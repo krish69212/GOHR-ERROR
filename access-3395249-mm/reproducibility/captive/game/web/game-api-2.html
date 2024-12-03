@@ -1,0 +1,590 @@
+<html>
+  <head><title>Web API for the use by the Rule Game client - second batch</title>
+  </head>
+<body>
+  <h1>Web API for the use by the Rule Game client - second batch</h1>
+
+  <p align="center"><em>Version 4.005,  2022-01-01</em></p>
+
+  <p>This is the "Second Batch" (prefix=<tt>/GameService2</tt>)  of the Game Service web API calls. They are intended for use with a client app that works with players enrolled in experiments; each player is identified by a player ID, and the server assigns each player to a "trial list" (a particular track in the experiment plan with which this player ID is associated with).</p>
+
+  <p>For calls that can be used by players not enrolled in experiments (e.g. our own team members developing and testing games), see <a href="game-api.html">the First Batch</a>.</P>
+    
+  
+  <ol>
+
+    <li>GET <strong><tt>/getVersion:</tt> Report the currently deployed version of the Game Server.</strong>
+	<form method="get" action="game-data/GameService2/getVersion">
+	  <button type="submit">Get version!</button>
+	</form>
+
+
+  <li>POST <strong><tt>/registerUser:</tt> Regsiter a new repeat user.</strong> The Android app should do it when it's first used, before any games are applied. Before making this call, the Androing app can ask the user to either identify himself in some way (by entering an email address and/or a nickname), or to proceed anonymously (by checking the "anonymous" box on the identification screen). 
+  <form method="post" action="game-data/GameService2/registerUser"
+	 enctype="application/x-www-form-urlencoded">
+    Email: <input name="email" type="text" size="32" value="">
+    <br>
+    Nickname: <input name="nickname" type="text" size="32" value="">
+    <br>
+
+    Anonymous: <input type="checkbox" name="anon" value="true"><br>
+
+    <input type="submit">
+  </form>
+
+    <p>On error, the return structure  may have an error flag set to true, and an error message. On success, the return structure will contain an integer user id (<tt>user.id</tt>), which the Android app should save for later use in /player calls. Another value, <tt>user.idCode</tt> should be remembered as well; in future versions, it may be used for authentication. (As of ver 4.000, this is not yet supported).
+      
+<p>Sample return value, when a new user is registered with a nickname and no email (thus, <tt>newlyRegistered=true</tt>)
+      
+{"error":false,"newlyRegistered":true,"user":{"date":"2021-10-20T18:38:31.288Z[UTC]","email":"","id":6,"idCode":"user-20211020-143831-GF0LJI","nickname":"The Walrus"}}</tt>
+
+ <p>Sample return value, when a new user is registered with a nickname and an email address (thus, <tt>newlyRegistered=true</tt>)
+      <tt>
+      {"error":false,"newlyRegistered":true,"user":{"date":"2021-10-20T18:40:19.968Z[UTC]","email":"v.menkov@gmail.com","id":7,"idCode":"user-20211020-144019-I9O244","nickname":"The Walrus"}}</tt>
+
+       <p>Sample return value, when a new user is registered with no email or nickname, and with the "anon" box checked:<tt>
+{"error":false,"newlyRegistered":true,"user":{"date":"2021-10-20T18:45:44.047Z[UTC]","id":8,"idCode":"anon-20211020-144544-9WGVH3"}}</tt>
+      
+
+      <p>Sample return value, when the email and nickname matched an already regiesterd (thus, <tt>newlyRegistered=false</tt>)
+      <tt>
+      {"error":false,"newlyRegistered":false,"user":{"date":"2021-10-12T01:55:21Z[UTC]","email":"vmenkov@gmail.com","id":3,"idCode":"user-5L54KP","nickname":"V Menkov Test 1"}}
+      </tt>
+      
+    <li>POST <strong><tt>/player:</tt> Start a player's interaction with the system, and obtain a randomly selected trial list for this player</strong>. 
+  <form method="post" action="game-data/GameService2/player"
+	 enctype="application/x-www-form-urlencoded">
+     Player ID: <input name="playerId" type="text" size="25" value="AnyText01"> -- mandatory, unless Repeat User ID is supplied (in which case the server will create a unique playerId)<br>
+     Experiment plan (optional, e.g <tt>qt</tt> or <tt>pk1</tt>): <input name="exp" type="text" size="25" value=""> -- controls the assignment of the player to an experiment plan. Mandatory (unless you want an assignment based on the player name, which usually makes litlle sense). <br>
+     Repeat User ID: <input name="uid" type="text" size="10" value=""> -- a numerical user ID, if the player belongs to a repeat user. Leave blank otherwise<br>  
+	  <input type="submit">
+  </form>
+
+      <p>The input should include either player ID (pid), or Repeat User ID (uid), or both. In the traditional approach with no repeat users (e.g., the Mechanical Turk use case) only the player ID is supplied. In the repeat-user context (e.g. from the Android app), it is best to supply only the uid; the server will then create a unique pid and return it. Sample output:
+<pre>
+  {"errmsg":"Debug:\n*M*[0]\n[1]\n[2]\nid=46, curSer=0 b=false, R=$0"
+  ,"error":false,"alreadyFinished":false,
+  "experimentPlan":"P:pilot06:no-feedback",
+  "newlyRegistered":true,
+  <strong>"playerId":"RepeatUser-8-V7CMVI-20211020-144752"</strong>,
+
+  "trialList":[{"clearing_threshold":1.3,"max_points":10,"b":1.5,
+  "min_points":2,"max_colors":4,"feedback_switches":"free",
+  "min_objects":9,"clear_how_many":2,"bonus_extra_pts":3,"rule_id":
+  "shapeMatch_1","max_objects":9,"grid_memory_show_order":false,
+  "min_shapes":4,"give_up_at":3,"stack_memory_show_order":false,
+  "max_shapes":4,"min_colors":4,"stack_memory_depth":0,"max_boards":5,
+  "activate_bonus_at":3},
+  ....],
+  "trialListId":"shape_shapeBroad_posBroad"}
+</pre>
+  <p>For the meaning of the output fields, see the documentation for <a href="api/edu/wisc/game/rest/PlayerResponse.html">PlayerResponse</a>. A field named <tt>foo</tt> will be described there under <tt>getFoo()</tt> or (for boolean values) <tt>isFoo()</tt>. The field named <tt>playerId</tt> normally simply mirrors the input value of the same name; but if playerId was blank and user ID was supplied instead, the server will create a playerId itself, and return it via this field.
+
+    <p>Ver. 1.021: added <tt>trialList</tt>, which is a vector with one element per line of the trial list. Can be used to find the total number of rule sets to which a player will be exposed.</p>
+    
+  <p>Sample output:
+    <pre>
+      {"errmsg":"Debug:...",
+      "error":false,
+      "newlyRegistered":false,
+      "trialListId":"trial_1"}
+    </pre>
+    
+    In practice, if you supplied a pid with the input you don't need any of the returned values, other than the error code. If uid with no pid was supplied on input, you need to save the pid to use it in the subsequent calls to /newEpisode or /mostRecentEpisode. </p></li>
+
+<li>POST <strong><tt>/mostRecentEpisode</tt>: Return the latest episode (complete or incomplete) for a specified user:</strong>
+        <form method="post" action="game-data/GameService2/mostRecentEpisode"
+	 enctype="application/x-www-form-urlencoded">
+	  Player ID: <input name="playerId" type="text" value="" size="20"><br>
+	  <input type="submit">
+	</form>
+
+  <P>The response is in the same format as for /newEpisode, below. Check the values of <tt>display.<a href="api/constant-values.html">finishCode</a></tt> to see the status of the game (continuing/cleared/stalemated/given up/early win), and of <tt>display.guessSaved</tt> to see if a guess has been recorded.</p> 
+
+<li>POST <strong><tt>/newEpisode</tt>: Create a new episode for a specified user:</strong>
+        <form method="post" action="game-data/GameService2/newEpisode"
+	 enctype="application/x-www-form-urlencoded">
+	  Player ID: <input name="playerId" type="text" value="" size="20"><br>
+	  Optional parameters (to effect certain preliminary actions before
+	  the /newEpisode call):
+	  <br>
+	  Activate Bonus: 	  <select name="activateBonus">
+	    <option value="true">true</option>
+	    <option value="false" selected>false</option>
+	  </select> (If true, the /activateBonus operation will be executed immediately prior to the new episode retrieval)
+	  <br>
+	  Give up: 	  <select name="giveUp">
+	    <option value="true">true</option>
+	    <option value="false" selected>false</option>
+	  </select> (If true, the /giveUp operation will be executed immediately prior to the new episode retrieval)	  
+	  <input type="submit">
+	</form>
+
+<p>For the meaning of the output fields, see the documentation for <a href="api/edu/wisc/game/rest/NewEpisodeWrapper2.html">NewEpisodeWrapper2</a>. A field named <tt>foo</tt> will be described there under <tt>getFoo()</tt> or (for boolean values) <tt>isFoo()</tt>.
+	
+  <p>Sample output; note that some fields have been moved from X to display.X. The fields within display.{...} are the same as those given by the /display and /move calls.	
+	<pre>
+	  {"errmsg":"Debug:...",
+	  "error":false,
+	  "alreadyFinished":false,
+	  "display":{
+	  "board":{"id":0,"value":[{"buckets":[3],"color":"BLUE","id":1,"shape":"SQUARE","x":5,"y":5}]},"code":-8,"errmsg":"Display requested\nDEBUG\n[0][20200827-153052-F66ITP; FC=1; M 2/2 $10][20200827-153246-R7LHH9; FC=1; M 3/3 $10]\n[1][20200827-160602-PYQTAJ; FC=1; M 2/2 $10][20200827-162713-2HRENR; FC=1; M 2/2 $10]\n*M*[2][20200905-120700-PDF966; FC=1; M 1/1 $10][20200905-121136-7L3EHY; FC=0; M 0/1 $0]\nR=$50",
+	  "finishCode":0,
+	  "numMovesMade":1,
+	  "bonus":false,
+	  "bonusEpisodeNo":0,
+	  "canActivateBonus":true,
+	  "episodeNo":1,
+	  "guessSaved":false,
+	  "seriesNo":2,
+	  "totalBoardsPredicted":2,
+	  "totalRewardEarned":50
+	  "transcript":[{"pos":32,"bucketNo":3,"code":0}]} // <em>All moves (and move attempts) - new in ver 1.014</em>
+	  },
+	  "ruleSetName":"TD-03",
+	  "trialListId":"trial_list_1",
+	  "episodeId":"20200905-121136-7L3EHY",
+	  "para":{"clearing_threshold":1.3,"max_points":10,"b":1.5,"min_points":2,"max_colors":1,"f":4,"feedback_switches":"fixed","min_objects":1,"m":9,"n":1,"clear_how_many":2,"bonus_extra_pts":3,"rule_id":"TD-03","max_objects":3,"grid_memory_show_order":false,"min_shapes":1,"stack_memory_show_order":false,"max_shapes":1,"min_colors":1,"stack_memory_depth":6,"max_boards":2,"activate_bonus_at":2}}  
+	</pre>
+
+<p>display.transcript contains the description of all previous moves, as a vector. Each element has pos=the origin position (as an integer, numbered from 1=(1,1) to 36=(6,6), by row from left bottom corner), bucketNo=the destination bucket number, and the success code (same meaning as display.code)
+	
+ <br>Sample output 
+<pre>
+	
+<pre>
+  {"errmsg":"Debug...", <em> // either used to describe errors, or contains various status info for debugging.</em>
+  "error":false,   <em> // true if something bad has happened</em>
+  "alreadyFinished":false,  <em> // this will be true if error==true, and the error is caused by the fact that the player has already done all his param sets</em>
+ "board":{"longId":0,"id":0,"value":
+[{"buckets":[0],"color":"RED","id":0,"shape":"STAR","x":3,"y":1},
+{"buckets":[0],"color":"RED","id":0,"shape":"STAR","x":3,"y":5}]},
+<em> // description of the initial board </em>
+"bonus":false,    <em> // true if this episode is part of a bonus subseries</em>
+"bonusEpisodeNo":0, <em> // the number of previous bonus episodes in this series</em>
+"canActivateBonus":false, <em> // true if you can put an "Activate Bonus" button on the screen in this episode</em>
+"trialListId":"trial_list_1", <em> Which trial list from the current experiment plan has been chosen for this player?</em>
+"ruleSetName":"TD-03",   <em> The name of the rule set contained in the current parameter set. This is a file path name, relative to the main rule set directory</em>
+"episodeId":"20200828-021427-FJRX9J",<em> // Save this and use it in /move calls later!</em>
+"para":
+{"clearing_threshold":1.3,"max_points":10,"b":1.5,"min_points":2,
+"max_colors":1,"f":4,"feedback_switches":"fixed","min_objects":1,"m":9,"n":1,
+"clear_how_many":2,"bonus_extra_pts":3,"rule_id":"TD-02","max_objects":3,
+"grid_memory_show_order":false,"min_shapes":1,"stack_memory_show_order":false,
+"max_shapes":1,"min_colors":1,"stack_memory_depth":6,"max_boards":2,
+"activate_bonus_at":2},
+<em> // All the parameters from the current param set
+  //  (the current row of the trial list file). Some of them may be used by the
+//GUI tool to control some points of the appearance </em>
+"seriesNo":1, <em> // the 0-based sequential number of this series (= 0-based sequential number of this row of the trial list file).
+// You can increment this number by 1 and display it in a "You are working on Rule No. X" message.</em>
+"episodeNo":0,<em> // the 0-based number of this episode within the series (i.e. among
+// the episodes played under a given rule set).
+// You can increment this number by 1 and display it as Y in a "Rule No. X, Episode No. Y" message.</em>
+"totalRewardEarned":33 <em> // the sum total of rewards earned by this player in all episodes so far</em>
+}
+</pre>
+<p>As of ver. 1.011, in the board description the field <tt>dropped</tt> is shown only in the pieces that have been already removed from the board; the value is the ientifying number (0 thru 3) of the bucket into which the piece has been dropped.</p>
+
+
+  </li>
+  <li>GET <strong><tt>/display</tt>: View the current display:</strong>
+      <form method="get" action="game-data/GameService2/display"
+	 enctype="application/x-www-form-urlencoded">
+	  Episode ID (returned by an earlier newEpisode call): <input name="episode" type="text" size="25"><br>
+	  <input type="submit">
+      </form>
+<p>For the meaning of the output fields, see the documentation for <a href="api/edu/wisc/game/sql/EpisodeInfo.ExtendedDisplay.html">ExtendedDisplay</a>. A field named <tt>foo</tt> will be described there under <tt>getFoo()</tt> or (for boolean values) <tt>isFoo()</tt>.
+
+      
+  <p>Sample output (in ver. 1.016). The new fields are ruleSrc and ruleLineNo.
+<pre>
+  {"bonus":false,
+  "totalRewardEarned":0,
+  "seriesNo":0,"episodeNo":0,
+  "bonusEpisodeNo":0,
+  "canActivateBonus":false,
+  "totalBoardsPredicted":2,
+  "guessSaved":false,
+  "rulesSrc":{  <em>// The rules of this game </em>
+  "orders":   <em>// array of orders. In this specific game (TD-1) one order is defined, but is not actually used</em>
+     ["Order Custom=[36,35,34,33,32,31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1]"],
+  "rows": <em>// array of rules, one element per line </em>
+     ["(1,*,*,*,[0,1,2,3])",
+      "(*,*,*,*,[((p + 3) % 4)])"]
+  },
+  "ruleLineNo":0,  <em>//  which line of the rules set is currently active (0-based)</em>
+  "finishCode":0,
+  "board":{"id":0,"value":[{"id":1,"color":"RED","shape":"SQUARE","x":6,"y":3,"buckets":[0,1,2,3]},{"id":0,"color":"RED","shape":"SQUARE","x":1,"y":1,"dropped":3,"buckets":[0,1,2,3]}]},
+  "code":-8, <em> // It is always -8 on /display calls </em>
+  "errmsg":"null\nDEBUG\n*M*[0][20200910-005354-0JVTXF; FC=0; m 1/2 $0]\n[1]\n[2]\nR=$0","numMovesMade":1,
+  "transcript":[{"pos":1,"bucketNo":3,"code":0}]
+  }
+</pre>
+      <br>Sample output (in ver. 1.012), extra fields added (some of which pevious were only seen in /newEpisode):
+<pre>
+  {"board":{"id":0,"value":[{"buckets":[3],"color":"BLUE","dropped":3,"id":0,"shape":"SQUARE","x":5,"y":5}]},
+  "code":-8,
+   "errmsg":"Display requested\nDEBUG\n[0][20200827-153052-F66ITP; FC=1; M 2/2 $10][20200827-153246-R7LHH9; FC=1; M 3/3 $10]\n[1][20200827-160602-PYQTAJ; FC=1; M 2/2 $10][20200827-162713-2HRENR; FC=1; M 2/2 $10]\n*B*[2][20200905-120700-PDF966; FC=1; M 1/1 $10][20200905-121136-7L3EHY; FC=1; B 1/1 $10]\nR=$60", // <em>just a progress report for this session, handy for debugging </em>
+  "finishCode":1,
+  "numMovesMade":1,
+  "bonus":true,
+  "bonusEpisodeNo":0,
+  "canActivateBonus":false,
+  "episodeNo":1, // <em>sequential number in this series (0-based)</em>
+  "guessSaved":false, // <em>has the guess been recorded for this episode?</em>
+  "seriesNo":2, // <em>sequential number of this series in the trial list (0-based)</em>
+  "totalBoardsPredicted":3, // <em>The current prediction for the total number of episodes to be played in this series.
+    // During the main subserties, this is simply para.max_boards; during the bonus subseries, this is A+para.clear_how_many,
+    // where A is the number of non-bonus episodes that had been played in this series before bonus was activated.</em>
+  "totalRewardEarned":60}
+      </pre>
+      <br>Sample output (in ver. 1.011)
+<pre>
+  {"board":{"longId":0,"id":0,"value":
+  [{"buckets":[0],"color":"RED","dropped":1,"id":0,"shape":"STAR","x":3,"y":1},
+  {"buckets":[0],"color":"RED","dropped":3,"id":0,"shape":"STAR","x":3,"y":5}]},
+  "bonus":false,  <em> // true if this episode is part of a bonus subseries</em>
+  "code":-8, <em> // It is always -8 on /display calls </em>
+  "errmsg":"Display requested", 
+  "finishCode":1,<em> // Tells if the episode still continues, has stalemated,
+//    has been finished by clearing the board, or has been given up.
+//    For the semantics of the <tt>code</tt> and  <tt>finishCode</tt> fields,
+//    see the entry on the MOVE command in the <a href="captive.html#move">documentation on the Captive Game Server</a></em>
+  "numMovesMade":3, <em> // the number of move attempts made so far in this episode</em>
+  "totalRewardEarned":0 <em> // the sum total of rewards earned by this player in all episodes so far</em>
+  }
+</pre>
+
+<p>Two more fields added in ver. 2.007:
+<pre>
+"trialListId":"trial_list_1", //<em> Which trial list from the current experiment plan has been chosen for this player?</em>
+"ruleSetName":"TD-03",  //doc <em> The name of the rule set contained in the current parameter set. This is a file path name, relative to the main rule set directory</em>
+</pre>
+
+If the rule set file was specified in the param set as an absolute path, that's what you'll see here as well:
+<pre>
+"ruleSetName":"/home/vmenkov/test/rules/rule-a.txt",
+</pre>
+
+<p>As of ver 4.005, there is support for the new incentive scheme, called <tt>DOUBLING</tt>. The output may look as follows (with the fields relevant for this incentive scheme shown in bold):
+  <pre>{"board":{"id":0,"value":[{"buckets":[0,1],"color":"YELLOW","id":2,"shape":"STAR","x":3,"y":3},{"buckets":[0,1],"color":"BLACK","id":3,"shape":"SQUARE","x":4,"y":3},{"buckets":[0,1],"color":"BLACK","id":4,"shape":"STAR","x":2,"y":4},{"buckets":[0,1],"color":"YELLOW","id":5,"shape":"STAR","x":5,"y":4},{"buckets":[0,1],"color":"BLACK","id":7,"shape":"SQUARE","x":4,"y":6},{"buckets":[0,1],"color":"RED","id":8,"shape":"TRIANGLE","x":6,"y":6},{"buckets":[],"color":"BLUE","dropped":3,"id":0,"shape":"SQUARE","x":4,"y":1},{"buckets":[],"color":"YELLOW","dropped":3,"id":1,"shape":"CIRCLE","x":3,"y":2},{"buckets":[],"color":"RED","dropped":0,"id":6,"shape":"SQUARE","x":3,"y":6}]},
+    "code":-8,
+    "errmsg":"Display requested\nDEBUG\n*M*[S0][20211222-124942-JRNZOF; FC=1g; m 9/9 $10][20211222-130206-M51PK8; FC=0; m 3/9 $0]\n[S1]\n[S2]\nid=115, curSer=0 b=false, R=$10",
+    "error":false,
+    "explainCounters":"* / 1",
+    "finishCode":0,"numMovesMade":3,
+    "ruleLineNo":1,
+    "rulesSrc":{"orders":[],"rows":["(1,*,*,*,[2, 3])","(1,*,*,*,[0, 1])"]},
+    "transcript":[{"code":0,"pieceId":0,"pos":4,"time":"2021-12-22T18:06:27.543Z[UTC]","bucketNo":3},{"code":0,"pieceId":6,"pos":33,"time":"2021-12-22T18:06:41.463Z[UTC]","bucketNo":0},{"code":0,"pieceId":1,"pos":9,"time":"2021-12-22T18:06:52.927Z[UTC]","bucketNo":3}],
+    "bonus":false,"bonusEpisodeNo":0,"canActivateBonus":false,
+    "episodeNo":1,
+    <strong>
+      "factorAchieved":2,
+      "factorPromised":4,
+      "incentive":"DOUBLING",
+      "justReachedX2":false,
+      "justReachedX4":false,
+      "lastStretch":11,
+      "rewardsAndFactorsPerSeries":[[10,2]],
+      </strong>
+    "guessSaved":false,
+    "ruleSetName":"bottom_then_top",
+    "seriesNo":0,
+    "totalBoardsPredicted":5,
+    "totalRewardEarned":10,
+    "trialListId":"broad_clock_shape"}    
+    </pre>
+
+<p>For a detailed explanation of the incentive-related fields, see <a href="incentive-doubling.html">The DOUBLING incentive scheme</a>.
+
+<p>Starting in ver. 4.008, this structure  has one more field:
+<pre>
+  "rewardRange":[2,6],
+</pre>
+The value is the range within which the reward for the current episode could conceivably fall once episode is ended. The first value is the lower bound; this is what the player would earn if it will make an inordinately large number of mistakes before he completes the episode (i.e. clears the board or reaches a stalemate). The second value is the upper bound; this is what the player will earn if he completes the episode without making any more mistakes in addition to those he may have made already. (If the episode has been completed already, this field is still provided, and the upper bound of the range represents the actual reward for the episode).  These reward numbers do not include any doubling/quadrupling factor that may attach to this episode (and the series) if the DOUBLING incentive scheme is in effect.
+  
+<p>If the <tt>finishCode</tt> in the display structure has a value other than 0 (thus indicating that the episode has completed), the display structure will also have a <tt>transitionMap</tt> field. That fields contains a structure whose content is explained under <a href="#guess">/guess</a>, below.
+  
+ <li>POST <strong><tt>/move</tt>: Make a move:</strong>
+      <form method="post" action="game-data/GameService2/move"
+	 enctype="application/x-www-form-urlencoded">
+	  Episode ID (returned by an earlier newEpisode call): <input name="episode" type="text" size="25"><br>
+	  Piece to move: column=x=<input name="x" type="text" value="1" size="2">,
+	  row=y=<input name="y" type="text" value="1" size="2"> (both ranging 1 thru 6)<br>
+	  Destination bucket (identified by  bucket_column=bx=<input name="bx" type="text" value="7" size="2">,
+	  bucket_row=by=<input name="by" type="text" value="7" size="2"> (possible values are 0 and 7)<br>
+	  Attempted move and pick count so far (the number of previous calls to <strong><tt>move</tt></strong> and <strong><tt>pick</tt></strong> in this episode. This can also be interpreted as the 0-based sequential number of this pick or move attempt) <input name="cnt" type="text" value="0" size="5"><br>
+	  <input type="submit">
+      </form>
+
+   <p>The response structure is nearly identical to that of /move, except that <tt>code</tt> contains a value that describes the accept/deny code to this move.
+For the meaning of the output fields, see the documentation for <a href="api/edu/wisc/game/sql/EpisodeInfo.ExtendedDisplay.html">ExtendedDisplay</a>. A field named <tt>foo</tt> will be described there under <tt>getFoo()</tt> or (for boolean values) <tt>isFoo()</tt>.
+
+      
+<p>Sample response<pre>
+  {"board":{"longId":0,"id":0,"value":
+  [{"buckets":[1],"color":"BLUE","id":0,"shape":"TRIANGLE","x":4,"y":2},
+  {"buckets":[1],"color":"BLUE","dropped":3,"id":0,"shape":"TRIANGLE","x":2,"y":3}]}, <em> // the board after this move </em>
+  "bonus":false, <em> // true if this episode is part of a bonus subseries</em>
+  "code":4, <em> Outcome of this move.
+    For the semantics of the <tt>code</tt> and  <tt>finishCode</tt> fields,
+    see the entry on the MOVE command in the <a href="captive.html#move">documentation on the Captive Game Server</a></em>
+  "errmsg":"...",<em> // either used to describe errors, or contains various status info for debugging.</em>
+  "finishCode":0, <em> Overall state of this episode now.
+    For the semantics of the <tt>code</tt> and  <tt>finishCode</tt> fields,
+    see the entry on the MOVE command in the <a href="captive.html#move">documentation on the Captive Game Server</a></em>
+  "numMovesMade":1, <em> // the number of move attempts made so far in this episode</em>
+  "totalRewardEarned":42<em> // the sum total of rewards earned by this player in all episodes so far</em>
+  }
+</pre>
+
+   <p>The finish code reports the current state: 0=can play (there are pieces on the board, and some can be moved), 1=finish (no pieces left on the board), 2=stalemate (there are pieces on the board, but none of them can be moved anymore).</p>
+   </li>
+
+
+ <li>POST <strong><tt>/pick</tt>: Pick a piece:</strong>
+      <form method="post" action="game-data/GameService2/pick"
+	 enctype="application/x-www-form-urlencoded">
+	  Episode ID (returned by an earlier newEpisode call): <input name="episode" type="text" size="25"><br>
+	  Piece to move: column=x=<input name="x" type="text" value="1" size="2">,
+	  row=y=<input name="y" type="text" value="1" size="2"> (both ranging 1 thru 6)<br>	
+	  Attempted move and pick count so far (the number of previous calls to <strong><tt>move</tt></strong> and <strong><tt>pick</tt></strong> in this episode. This can also be interpreted as the 0-based sequential number of this pick or move attempt) <input name="cnt" type="text" value="0" size="5"><br>
+	  <input type="submit">
+      </form>
+
+The arguments to the <tt>/pick</tt> call are similar to those used in a /move call, except that there are no bucket coordinates. Unlike /move, a /pick call merely asks whether the piece in question can be moved to <em>any</em> position, but does not actually move it to anywhere.   The return value is the same JSON structure as a move call would return; look at the <tt>code</tt> field, with the same ACCEPT/DENY semantics. Here, ACCEPT (code 0) means that the piece can be moved to at least one bucket; DENY (code 4) indicates that the piece cannot be moved to any bucket.
+ </li>
+
+ 
+	<li>POST <strong><tt>/activateBonus:</tt> Activate the bonus for this player. The current episode (if still active) and all subsequent episode of the same series (i.e. played by the same rule) will constitute the "bonus subseries"</strong>
+  <form method="post" action="game-data/GameService2/activateBonus"
+	 enctype="application/x-www-form-urlencoded">
+     <input name="playerId" type="text" size="25" value="AnyText01">
+	  <input type="submit">
+  </form>
+  <br>Sample output
+  <pre>
+    {"errmsg":"Bonus activated successfully","error":false}
+  </pre>
+	</li>
+   <p>The finish code reports the current state: 0=can play (there are pieces on the board, and some can be moved), 1=finish (no pieces left on the board), 2=stalemate (there are pieces on the board, but none of them can be moved anymore).</p>
+   </li>
+ 
+	<li>POST <strong><tt>/giveUp:</tt> "Gives up" the current series (i.e. the series played with the current param set), so that the next episode will be run with the next param set.</strong> If this is invoked while an episode is in progress, the episode will be marked as "given up" as well. However, you may choose to only use this call at the end of an episode (that is, give the player an option of switching to the next param set for the next episode, regardless of one's current position in the current series).
+  <form method="post" action="game-data/GameService2/giveUp"
+	 enctype="application/x-www-form-urlencoded">
+Player ID:     <input name="playerId" type="text" size="25" value="AnyText01">
+Series No.:     <input name="seriesNo" type="text" size="2" value="0">
+	  <input type="submit">
+  </form>
+  <br>The seriesNo value must be exactly the same to which the current (or just completed) episode belongs to, as per the "seriesNo" value obtained in the last /newEpisode call. This is required as a safety check, to ensure that the client and server are on the same page. (If it's an annoyance to have it, I can remove this parameter)
+  <br>Sample output (on success):
+  <pre>
+{"errmsg":"Gave up series 0","error":false}
+  </pre>
+  </li>
+	
+
+
+ <li><a name="guess">POST <strong><tt>/guess:</tt></a> Recording a guess</strong>
+      <form
+        id="wfForm"
+        class="wfForm"
+	method="post" action="game-data/GameService2/guess"
+	enctype="application/x-www-form-urlencoded">
+
+	  Episode ID (returned by an earlier newEpisode call): <input name="episode" type="text" size="25"><br>
+	
+
+	<br>
+	<textarea id="wf.data" name="data" rows="10" cols="60">
+Please type your guess here (an arbitrary test)
+	</textarea><br>
+	Confidence  <input name="confidence" type="text" size="2" value="5">
+	<input type="submit">
+      </form>
+      <p>
+Response (on success):
+      <pre>
+{"error":false,"byteCnt":91,"path":"/opt/tomcat/saved/guesses/qt-01.csv"}
+</pre>
+
+<p>For the meaning of the output fields, see the documentation for <a href="api/edu/wisc/game/rest/GuessWriteReport.html">GuessWriteReport</a>. A field named <tt>foo</tt> will be described there under <tt>getFoo()</tt> or (for boolean values) <tt>isFoo()</tt>.
+      
+   <p>The response contains a structure, <tt>transitionMap</tt>, which can be used to create a set of button offering the player possible further actions. The structure describes buttons in terms of key/value pairs, where the key tells where you'll get if you click the button, and the value tells how you can get there.
+     Listed below  are all possible key/value pairs, and their semantics.
+
+     
+     <table border=1>
+       <tr><th>Key<th>Value<th>How the button can be labeled <th>What the client can if after player clicks the button
+
+	   <tr><td>MAIN <td> DEFAULT <td>Next episode <td> Call /newEpisode, which will produce another main-subseries (non-bonus) episode in the same series</tr>
+	   <tr><td>BONUS <td>DEFAULT <td>Next episode <td> Call /newEpisode, which will produce another bonus episode in the same series</tr>
+	   <tr><td>NEXT <td>DEFAULT <td>Next series<td> Call /newEpisode, which will automatically start the first episode of the next series (because no more episodes can be started in the current series)</tr>
+	   <tr><td>END <td>DEFAULT<td>Finish<td>The end of the last series, and of the experiment.     Call /newEpisode. It will return error=true, allFinished=true, and completionCode, which the GUI client can then display to the player</tr>
+	   
+	   <tr><td>BONUS <td> ACTIVATE <td>Activate Bonus<td> Call /activateBonus, followed by /newEpisode (or simply call /newEpisode with activateBonus=true), which will start the first bonus episode in this series</tr>
+	   <tr><td>NEXT <td>GIVE_UP <td>Give up (and proceed to the next series) <td> Call /giveUp (which will switch series) followed by /newEpisode.  (Or simply call /newEpisode with giveUp=true). The first episode of the next series will start</tr>
+	   <tr><td>END <td>GIVE_UP<td>Give up (and end the last series, and the experiment)<td>Call /newEpisode with giveUp=true. It will return error=true, allFinished=true, and completionCode, which the GUI client can then display to the player. </tr>
+     </table>
+
+     <p>A button with value="DEFAULT" is produced after every episode, indicating the default action (continuing in the same series, switching to the next series if the current series is done, or finishing one's work after the last series). A button with value="GIVE_UP" is produced after every episode other than the last episode of a series; it indicates the player's ability to end a series prematurely (and then go to the next series, if available). A button with value="ACTIVATE" is produced after main-subseries episodes if the player is eligibile to switch to ("activate") the bonus subseries.</p>
+      
+  <li>GET <strong><tt>/debug</tt></strong>: Same info as given by /player, and some more for a specified user:
+        <form method="get" action="game-data/GameService2/debug"
+	 enctype="application/x-www-form-urlencoded">
+	  Player ID: <input name="playerId" type="text" value="" size="20"><br>
+	  <input type="submit">
+	</form>
+
+<li>GET <strong><tt>/colorMap</tt></strong>: shows the currently supported colors. 
+        <form method="get" action="game-data/GameService2/colorMap"
+	 enctype="application/x-www-form-urlencoded">
+	  <input type="submit">
+	</form>
+	Return value: a hash map; each keys is a color name (in uppercase), and the corresponding value is a  vector of 3 integers (each number in the [0:255] ranges), describing the color in the RGB space. The data are taken from /opt/tomcat/game-data/colors/colors.csv. E.g.
+	<pre>
+	  {"RED":[220,20,0],
+	  "PINK":[220,100,100],
+	  "BLUE":[30,90,210],
+	  "errmsg":"No error",
+	  "BLACK":[0,0,0],
+	  "YELLOW":[250,240,0],
+	  "PURPLE":[200,0,200],
+	  "error":false,
+	  "GREEN":[0,250,0]}
+	</pre>
+	The hash table may also contain fields "error" and "errmsg". If an error has happened (e.g. the color map file on server could not be parsed), the error field will be set to true, and errmsg will contain an explanation of sorts.
+
+<li>GET <strong><tt>/listShapes</tt></strong>: shows the currently supported shapes.
+
+        <form method="get" action="game-data/GameService2/listShapes"
+	 enctype="application/x-www-form-urlencoded">
+	  <input type="submit">
+	</form>
+	This should return a structure with the field named <tt>value</tt> whose value is a list of shapes. E.g.:<pre>
+{"error":false,
+"values":["cloud-lightning","moon","blank","cloud-off","sun","cloud","cloud-rain","cloud-drizzle","triangle","star","cloud-snow","arrows/arrow-up","arrows/arrow-left","arrows/arrow-down-left","arrows/arrow-down-right","arrows/arrow-up-left","arrows/arrow-right","arrows/arrow-up-right","arrows/arrow-down","square","circle"]}
+	  </pre>
+The shape names are given using the same case as in the file names. They are not case-sensitive, though.
+	<br>
+	If an error happens, a structure with an error field is returned instead:
+	<pre>
+{"error":true, "errmsg": "And this is why: ..."}
+	</pre>
+
+<li><a name="GetImageServlet">(Effective ver. 3.0)</a> GET <strong><tt>GetImageServlet</tt></strong> -- Get an image file:
+  <form method="get" action="GetImageServlet">
+    <input type="text" name="image" value="star.svg" size="20">
+    <input type="submit">
+  </form>
+
+  This should return an image file (in SVG, PNG, JPEG, or GIF format, e.g. /opt/tomcat/game-data/shapes/star.svg), with the content type as approprite for the file type (<tt>image/svg+xml, image/jpeg</tt> etc). In the case of an error (e.g. no such file), error code 404 will be returned.
+  
+	
+<li>(Obsolete as of ver. 3.0)<strike>GET <strong><tt>admin/getSvg.jsp</tt></strong> -- Get SVG file:
+  <form method="get" action="admin/getSvg.jsp">
+    <input type="text" name="shape" value="STAR" size="20">
+    <input type="submit">
+  </form>
+
+  This should return an SVG file (e.g. /opt/tomcat/game-data/shapes/star.svg for argument STAR), with content type image/svg+xml. In the case of an error (e.g. no such file), error code 404 will be returned.
+  </strike>
+  
+  </ol>
+
+<hr>
+<h2><a name="html">HTML play</a></h2>
+
+<p>The "HTML play" can be used to play some episodes in the web browser, without the use of the client GUI app. This allows to test the Game Server functionality separately from that of the client GUI app.
+
+<p>Note: for technical reasons, in the HTML play the game pieces are drawn in black, and their assigned color (slightly "watered down", for better visibility) is indicated by the background of the cell. This is different from how the pieces appear in the GUI client.
+    
+
+<p>
+  <ul>
+<li>
+    POST <strong><tt>/playerHtml</tt>: Register a new player in an experiment plan of your choice:</strong>
+        <form method="post" action="game-data/GameService2Html/playerHtml"
+	      enctype="application/x-www-form-urlencoded">
+
+	  Player ID: <input name="playerId" type="text" size="25" value="AnyText01"><br>
+     Experiment plan (<tt>vmColorTest</tt> or <tt>default</tt>): <input name="exp" type="text" size="25" value="">
+	  <input type="submit">
+	</form>
+
+    
+<li>POST <strong><tt>/mostRecentEpisodeHtml</tt>: Look up the most recent episode for a specified user:</strong>
+        <form method="post" action="game-data/GameService2Html/mostRecentEpisodeHtml"
+	 enctype="application/x-www-form-urlencoded">
+	  Player ID: <input name="playerId" type="text" value="" size="20"><br>
+	  <input type="submit">
+	</form>
+
+<li>POST <strong><tt>/newEpisodeHtml</tt>: Create a new episode for a specified user:</strong>
+        <form method="post" action="game-data/GameService2Html/newEpisodeHtml"
+	 enctype="application/x-www-form-urlencoded">
+	  Player ID: <input name="playerId" type="text" value="" size="20"><br>
+	  <input type="submit">
+	</form>
+
+	
+<li>/moveHtml
+
+      <form method="post" action="game-data/GameService2Html/moveHtml"
+	 enctype="application/x-www-form-urlencoded">
+	  Episode ID (returned by an earlier newEpisode call): <input name="episode" type="text" size="25"><br>
+	  Piece to move: column=x=<input name="x" type="text" value="1" size="2">,
+	  row=y=<input name="y" type="text" value="1" size="2"> (both ranging 1 thru 6)<br>
+	  Destination bucket (identified by  bucket_column=bx=<input name="bx" type="text" value="7" size="2">,
+	  bucket_row=by=<input name="by" type="text" value="7" size="2"> (possible values are 0 and 7)<br>
+	  Attempted move count so far (the number of previous calls to <strong><tt>move</tt></strong> in this episode. This can also be interpreted as 0-based number of this move attempt) <input name="cnt" type="text" value="0" size="5"><br>
+	  <input type="submit">
+      </form>
+
+      
+  </ul>
+
+  <hr>
+  
+  <h2><a name="clear">Clear tables</a></h2>
+
+<p>For efficiency's sake, the Game Service tends to cache certain data, such as parsed rule sets or object property tables. If you modify a trial list file or a rule set file that already exists under <tt>/opt/tomcat/game-data</tt>, you may want to force the server to purge its stored tables, to ensure that your updated files will be re-read. If any players are playing at this time, clearing the table may cause a slight delay for them (as all necessary tables are re-read), but no disruption of their games.
+
+  <form method="post" action="game-data/CheckPlanService/clearTables"
+	 enctype="application/x-www-form-urlencoded">    
+     <button type="submit">Clear tables!</button>
+   </form> 
+  
+  <h2><a name="checkPlan">Validate your experiment plan</a></h2>
+
+<P>You can use the <a href="check-plan-form.jsp">experiment plan validation page</a> to check your experiment plan's experiment control files for errors (syntax errors, references to non-existent files, attempts to generate boards with non-existence colors or shapes, etc). Or if you remember the name of your plan, you can do it right here; just enter the name of your experiment plan and click on "Submit".
+  
+   <form method="post" action="game-data/CheckPlanService/checkPlan"
+	 enctype="application/x-www-form-urlencoded">
+     Experiment plan (e.g <tt>vmColorTest</tt> or <tt>default</tt>): <input name="exp" type="text" size="25" value="">
+     <input type="submit">
+   </form>
+  
+<hr>
+
+<h2>Where are the input files?</h2>
+
+<p>In /opt/tomcat/game-data
+  </p>
+
+<h2>Where are the output files?</h2>
+
+<p>In /opt/tomcat/saved
+  </p>
+
+
+<hr>
+
+[<a href=".">HOME</a>]
+				
+
+
+</body>
+</html>

@@ -1,0 +1,109 @@
+<html>
+  <head><title>Display a board</title>
+  </head>
+<body>
+  <h1>Display a board</h1>
+
+  <p align="center"><em>Version 3.003,  2021-06-30</em></p>
+
+<h2>Display a single board - copy and paste</h2>
+  
+  <form method="post" action="game-data/BoardDisplayService/displayBoard"
+	enctype="application/x-www-form-urlencoded">
+    Please enter a JSON element in the box below<br>
+	<textarea id="board.data" name="boardJson" rows="15" cols="70">
+	</textarea><br>	
+	The size of each game piece: <input type="text" name="cellWidth" value="60">
+
+	<br><button type="submit">Display the board described above</button>
+	</form>
+
+<p>
+
+  <p>
+    A sample board JSON element (using legacy shapes and colors) may look like this:
+    <pre>
+      {"id":"it-does-not-matter-what-goes-here",
+      "value":[
+      {"color":"yellow","shape":"square","id":"1","x":1,"y":1},
+      {"color":"black","shape":"square","id":"6","x":6,"y":1},
+      {"color":"red","shape":"square","id":"31","x":1,"y":6},
+      {"color":"blue","shape":"square","id":"36","x":6,"y":6}],
+ "name":"Four squares in corners"}
+    </pre>
+    You can copy and paste one from the output of the Game Server, if you use the Captive Game Server or HTML Play in the web server.
+    
+  <p>
+  You can have boards with images too, e.g.:
+  <pre>
+{"id":"cats","value":[
+   {"id":0,"x":4,"y":3,"image":"vm/image_test_01/cat-07.png","buckets":[]},
+   {"id":1,"x":1,"y":4,"image":"vm/image_test_01/cat-03.png","buckets":[]},
+   {"id":2,"x":1,"y":5,"image":"vm/image_test_01/cat-03.png","buckets":[]},
+   {"id":3,"x":6,"y":6,"image":"vm/image_test_01/cat-13.png","buckets":[0]}
+],
+ "name":"Some cats"}
+</pre>
+ 
+<h2><a name="fileSingle">Display a single board from a file (or multiple boards from multiple files)</a></h2>
+
+  <p>
+You can upload a JSON file with a single board; or you can upload several files,  each one containing a single board element. (As an example, you can pick any file(s) from under <tt>/opt/tomcat/game-data/boards/</tt>) :<br>
+  <form  enctype="multipart/form-data"
+  	 action="game-data/BoardDisplayService/displayBoardFile"
+	 method="post">
+<input type="file" size="80" name="file" multiple><br>
+The size of each game piece: <input type="text" name="cellWidth" value="60">
+<br><button type="submit">Display the board described by the JSON file</button>
+</form>
+
+<p>The content of each file you upload in this form should look like one of the examples above.
+
+  
+ <h2>Display a list of boards (copy and paste)</h2>
+  
+  <form method="post" action="game-data/BoardDisplayService/displayBoardList"
+	enctype="application/x-www-form-urlencoded">
+    Please enter a JSON element in the box below<br>
+	<textarea id="board.data" name="boardListJson" rows="10" cols="70">
+	</textarea><br>
+
+	<br>The size of each game piece: <input type="text" name="cellWidth" value="40">
+	<br>The number of columns: <input type="text" name="ncol" value="3">    
+	<br><input type="submit">
+	</form>
+
+  <p>Example:
+    <pre>
+      {"boards":[
+      {"id":"Board 1",
+      "value":[
+      {"color":"yellow","shape":"square","id":"1","x":1,"y":1},
+      {"color":"black","shape":"square","id":"6","x":6,"y":1},
+      {"color":"red","shape":"square","id":"31","x":1,"y":6},
+      {"color":"blue","shape":"square","id":"36","x":6,"y":6}],
+      "name":"Four squares in corners"},
+  {"id":"Board 2",
+      "value":[
+      {"color":"yellow","shape":"square","id":"1","x":2,"y":2},
+      {"color":"black","shape":"square","id":"6","x":5,"y":2},
+      {"color":"red","shape":"square","id":"31","x":2,"y":5},
+      {"color":"blue","shape":"square","id":"36","x":5,"y":5}],
+      "name":"Four squares near corners"} ]}
+    </pre>
+
+    <h2>Display a list of boards (from a board list file)</h2>
+     <p>
+  Or you can upload a JSON file with a list of boards,  as per the example above.
+  <form  enctype="multipart/form-data"
+  	 action="game-data/BoardDisplayService/displayBoardListFile"
+	 method="post">
+<input type="file" size="80" name="file">
+<br>The size of each game piece: <input type="text" name="cellWidth" value="40">
+<br>The number of columns: <input type="text" name="ncol" value="3">
+<br><button type="submit">Upload JSON file</button>
+</form>
+
+
+</body>
+</html>

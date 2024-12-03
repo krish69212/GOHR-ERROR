@@ -1,0 +1,2 @@
+# [Shape Match 1 Free] Each bucket collects pieces of one shape, with one free shape
+(*,star,*,*,[0,1,2,3]) (*,triangle,*,*,1) (*,square,*,*,2) (*,circle,*,*,3)

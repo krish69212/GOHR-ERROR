@@ -1,0 +1,459 @@
+<html>
+  <head><title>Rule Game server data</title>
+  </head>
+<body>
+  <h1>Rule Game server data</h1>
+
+    <p align="center"><em>Updated for Ver 4.002,  2021-11-20</em></p>
+
+  <h2>Introduction</h2>
+
+
+  <p>The data one stores on the Rule Game server can be broadly divided into 3 large groups:
+    <ol>
+      <li>Read-only data. These are the experiment control files, which describe the design of the experiments and the rules of the game. They are created by our research staff, and the server has no business modifying them. We keep these data in CSV, JSON, and text data files in several subdirectories under the <strong>Rule Game server input data directory</strong>, <tt>/opt/tomcat/game-data</tt>.
+
+      <li>Read-and-write data. This includes several tables describing the progress of the players in their experiments. By their nature, the server needs both to read and write these data. They are currently stored in several tables in a relational database in the MySQL server.
+
+      <li>Write-only data. Certain data, such as the transcripts of completed episodes, are created by the server, but the server does not need to read them back. These data are written into CSV files that live under the  <strong>Rule Game server saved data directory</strong>, <tt>/opt/tomcat/saved</tt>.
+    </ol>
+  </p>
+
+  <p>This document is written as a guide for the experiment manager, i.e. a researcher who designs new experiment plans and processes the data accumulated in the experiments. The first section concerns the data files you need to create to run an experiment, and the other two, the data that the server will generate for you as players play their games.
+
+    <p>Before proceeding with this document, make sure that you are familiar with the <a href="concepts.html">main concepts</a> of the Rule Game Server, such as repeat users, players, experiment plans, trial lists, series, episodes, etc.   
+
+    <h2><a name="in">Read-only data: experiment control files</a></h2>
+
+    <p>These files, created by the experiment designer, determine how experiments are run.</P>
+
+    <h3><a name="trialList">Trial list files</a></h3>
+
+  <p>The trial list files are in subdirectories of the main trial list directory, <tt>/opt/tomcat/game-data</tt>. For each static experiment plan, the subdirectory name is identical to that of the experiment plan; so, for example, the trial list files for the experiment plan <tt>default</tt>, sent by Gary in mid-August 2020, are in <tt>/opt/tomcat/game-data/default</tt>.
+  </p>
+
+  <p>Trial list files should have extension <tt>.csv</tt>. For example, if your experiment plant has 3 trial lists, named <tt>list_A</tt>, <tt>list_B</tt>, and <tt>list_C</tt>, these lists shoud be described in files named <tt>list_A.csv</tt>, <tt>list_B.csv</tt>, and <tt>list_C.csv</tt>. Please make sure not to name any of your trial lists <tt>defect</tt>, because the file name <tt>defect.csv</tt> is reserved, and is used for the <a href="#defect">defect file.</a>
+  
+  <p>When a player first enters the system, the server figures what experiment plan the player is associated with (as supplied in the URL, or, early on  <a href="#players">as encoded in the PlayerId</a>). Among all the trial list files located in that experiment's directory, the server picks one  trial list file based on the <a href="balancing.html">balancing algorithm</a>, the main consideration being to assign approximately equal number of "usable" players to each trial list. Once the assignment has been completed, it is permanently recorded in the <a  href="#PlayerInfo">table</a>, for use in all episodes played by this player.</p>
+
+
+  <p>Each row of the trial list file contains a parameter set. The meaning of parameters is explained briefly in the following document compiled by Paul:
+    <a href="https://docs.google.com/spreadsheets/d/1KoYdi0i_toN29hhPiOVA-teX1jjo6WlJs7wL6Oz0AzM/edit#gid=0">_0.GameParameters</a>, with     <a href="para-set.html">additional notes</a> elsewhere. However, parameters <tt>n</tt> and  <tt>b</tt> mentioned in that document are not actually used. See  the document on <a href="control-flow.html">Control flow</a> for additional discussion of how some parameters are used by the server when directing a player's activities and playing games.</P>
+
+  <h3><a name="trialList">Modifier files</a></h3>
+
+  <P>As outlined  <a href="concepts.html#sd">elsewhere</a>, since GS 4.*, the Game Server also supports dynamic experiment plans, which are convenient for quick experimentation. A dynamic experiment plan does not need an experiment plan directory under <tt>trial-lists</tt>. Instead, it has a <em>modifier file</em>, somewhere under <tt>modifiers</tt>. A modifier is a CSV file whose structure is similar to that of a trial list file, but it contains fewer columns.  For more details on how modifier files are used, and some examples, see <a href="launch/launch-setup.html">Adding a plan or a rule set to the MLC or APP launch pages</a>.
+
+  <h3><a name="defect">The defect file</a></h3>
+
+<p>Optionally, you can create a <em>defect file</em>, named <tt>defect.csv</tt> in an experiment's trial list directory, to influence the  <a href="balancing.html">balancing algorithm</a> assigning new players to trial lists. For details on this files syntax and semantics, see <a href="balancing.html#defect">The defect file</a> in the balancing algorithm write-up.</p>
+
+<p>Note that because the name <tt>defect.csv</tt> is reserved for the defect file, it cannot be used for a trial list file, you therefore must not name any of your trial lists  <tt>defect</tt>.
+    
+  <h3>Rule set files</h3>
+
+  <p>Each line of a trial list file, i.e. each parameter set, contains parameter <tt>rule_id</tt>, which refers to a particular set of rules for playing the game. The rule set files are all in  <tt>/opt/tomcat/game-data/rules</tt>; the name of each file consists of the value of the  <tt>rule_id</tt> parameter and the extension  <tt>.txt</tt>.</p>
+
+<p>For the syntax and semantics of the rule sets, see the <a href="syntax.html">Rule Set Syntax guide</a>. (It overrides the early  document, <a href="https://docs.google.com/document/d/1z_I1kbu-cocUUxOsoEU0WUK9gd3OZ3KiqisJw_Fn_tw/edit?ts=5f08503a">_0.Semantics2020.07.10.txt</a>, from GS 1.*).</p>
+
+  <h3><a name="defineBoard">Definining initial boards</a></h3>
+
+<p>When creating an episode, it is possible to load the initial board description from a pre-existing JSON file. Doing that, instead of generating random boards in runtime, allows one to give exactly the same experience to all players.
+
+<p> All JSON files defining initial boards should be placed into subdirectories of <tt>/opt/tomcast/game-data/boards</tt>. Please refer to the  <a href="para-set.html#defineBoard">specifying initial boards</a> section of the parameter set document for the details on configuring your trial list file for various modes in which predefined initial board files can be used.
+
+<p>Each initial board is defined in a JSON file, which may look like this:
+  <pre>
+    {"id":"vb",
+ "value":[{"color":"red","shape":"square","id":"1","x":1,"y":1},
+          {"color":"black","shape":"circle","id":"2","x":1,"y":2},
+          {"color":"yellow","shape":"star","id":"3","x":1,"y":3},
+          {"color":"blue","shape":"square","id":"4","x":1,"y":4},
+          {"color":"red","shape":"circle","id":"5","x":1,"y":5},
+          {"color":"black","shape":"star","id":"6","x":1,"y":6}
+         ],
+ "name":"A vertical bar"}
+  </pre>
+  In this example, the board has 6 pieces on it, all of them located in the leftmost column of the board (x=1), and occupying the entire column (y=1 thru 6). For each piece you want to place on the board you must specify:<ul>
+    <li>its coordinates (column <tt>x</tt> and row <tt>y</tt>, both ranging 1 thru 6)
+    <li>color (in Game Server 1.*, one of the four legacy colors; in Game Server 2.*, any color defined in the global <a href="#color">color map</a>)
+    <li>shape
+  </ul>
+  In the example above, the color  and shape names are given in lower case, but in reality they are case-insensitive. Internally they are represented in upper case, and are mapped to upper-case entries in the color map file and to lower-case file names of the SVG shape files. So when working with shapes, it's safer to only use the lower case throughout.
+
+<p>It is also possible to pre-create inital boards by using a shell script that will first create a large number of random boards, and then delete some and only keep those that satisfy your criteria. For details, see <a href="random-board-generator.html">Creating initial boards with a random board generator</a>.
+
+  
+    <h3><a name="color">Color map (GS 2.*)</a></h3>
+
+    <p>
+      While Game Server 1.* had just 4 built-in colors, Game Server 2.* allows the experiment manager to use arbitrary user-defined colors. While the colors used in the Game Server are identified by name, they are not necessarily the same as any of the 16 colors supported in <a href="https://www.w3.org/TR/html4/types.html#h-6.5">HTML 4 standard</a>, or any of the more numerous <a href="https://drafts.csswg.org/css-color/#named-color">named colors</a> of the CSS. Instead, the colors used in the Game Server are entirely user defined, as described below.</p>
+
+<P>A single file, <tt>/opt/tomcat/game-data/colors/colors.csv</tt> is used by the Game Server to define all colors used in all experiment plans. (Therefore, it is not possible for the same name -- e.g. <tt>RED</tt> to refer to different colors in different experiment plans). The file content may look as follows:
+<pre>    
+#color_name,R,G,B
+BLUE,30,90,210
+RED,220,20,0
+YELLOW,250,240,0
+BLACK,0,0,0
+GREEN,0,250,0
+PINK,220,100,100
+PURPLE,200,0,200
+... ... ...
+</pre>
+Each line  consists of 4 fields. The first field is the color name, writen using upper-case English characters; optionally, digits, dashes, and underscores may also be included in a color name. The following 3 colors contain decimal numbers, in the range 0 thru 255, representing the R, G, and B components of the color representation in the standard RGB model.
+
+<p>The experiment manager may add invent any color he or she can think of, but s/he should make sure that each color name is unique. Every color used in your experiment (and other experiments) should be listed in the color map file; otherwise, the GUI client will have trouble displaying the game pieces on the board properly.
+
+<p>Note that since Game Server 2.* does not really have built-in default colors anymore, it is desireable that the color map file contains at the very least the definitions of the four "legacy" colors, i.e. BLACK, RED, YELLOW, and BLUE.
+     
+  <h3><A name="shape">Shape files</a></h3>
+
+  <p>
+    While Game Server 1.* only allowed to use the four "legacy shapes" of game pieces, in Game Server 2.* you can use arbitrary shapes. For every shape you use, you must obtain a SVG file representing it (e.g., download one from the icon collection at <a href="https://react-icons.github.io/react-icons/icons?name=fi">the Feather collection</a>, or create one by hand), and place it into the Game Server's <em>shape file directory</em>, <tt>/opt/tomcat/game-data/shapes</tt>.
+
+  <p>At present, shape names are case-insensitive, but <strong>the SVG directory and file names are expected to be in the lower case.</strong> E.g. if your trial list file, rule set file, or initial board file refers to a shape <tt>STAR</tt> or  <tt>star</tt>, the corresponding file should be named  <tt>star.svg</tt>. If you use shape subdirectories, it may reduce confusion that you always use the lower case both in the subdirectory names, and when referring to shapes in trial set files and rule files.
+
+  <p>At the minimum, the shape file directory must contain at least the four files for the four "legacy shapes": <tt>circle.svg</tt>, <tt>square.svg</tt>.<tt>star.svg</tt>, <tt>triangle.svg</tt>.
+
+    <p>Additionally, the file named <tt>blank.svg</tt> should be kept in the shape file directory; it is used for blank squares in the <a href="game-api-2.html#html">HTML play</a>. For this reason, one should not use a shape named <tt>BLANK</tt>, because if you do, you won't be able to see the pieces of this shape very well on the board.
+
+      <h4>Subdirectories for shapes</h4>
+    <p>To better manage shape files, it is also possible to create subdirectories in the shape directory. For example, you have decided to create a game with the game piece shapes named <tt>AU/KANGAROO</tt>, <tt>AU/KOALA</tt>,  <tt>AU/BOOMERANG</tt>, and  <tt>AU/WOOMERA</tt>; the slash in the names of the shapes indicates that the files <tt>kangaroo.svg</tt>,  <tt>koala.svg</tt>,  <tt>boomerang.svg</tt>, and  <tt>woomera.svg</tt>, should go into a new subdirectory, <tt>/opt/tomcat/game-data/shapes/au</tt>.
+
+    <p>If you use shape subdirectories, you must surround shape names with double quotes (e.g. <tt>"au/kangaroo"</tt>) <em>when referring to them in rule set files</em>. This requirement exists because the syntax of the rule sets is quite complex (and, potentially, it may be expanded in the future), and using double quotes ensures correct parsing.
+
+      <p>Note that double quotes around individual shape names should not be used when defining the set of shapes in the trial list file. (There, the entire list of shapes can be double-quoted, if desired, but that's not necessary).
+
+	<h3>Launch files</h3>
+  <li>If you want your experiment plan, or a dynamic plan based on your rule set, to appear in the <a href="launch/">MLC Launch Page</a> (for the staff) or the <a href="launch/launch-rules.jsp">APP Launch Page</a> (for the students), you need either to follow certain rules for placing the trial list files or the rule set files into certain special directories, or to edit the "launch files". For details, see  <a href="launch/launch-setup.html">Setting up launch pages</a>.
+   
+	
+    <h3>Modifying input files</h3>
+
+<p>It is important  that you don't modify the data files directly in  <tt>/opt/tomcat/game-data</tt>, since if you do that, your updates will be lost later. Instead, you should modify the files in your working directory, and deploy from there. While it's possible to carry out the deployment manually, the preferred way to do it is by checking in your work to your repository in Github, which will trigger an automatic deployment. (Thanks, Kevin!) For details, see the section on GitHub in<a href="sop-experiment.html">Standard Operating Procedures: Preparing and running an experiment with the Rule Game Server</a>.
+
+  <h3>Can I place files to my own directory, instead of /opt/tomcat/game-data?</h3>
+
+<p>For development and testing purposes, it is possible to make Game Server work with rule files and initial board files located in your home directory, rather than in the <tt>/opt/tomcat/game-data</tt> tree.
+
+<p>  Whenever a rule name, initial boards directory, or a boards order file mentioned in a trial list file starts with a slash ("<tt>/</tt>"), it will be interpreted not as a reference to an entity under <tt>/opt/tomcat/game-data</tt>, but as an actual path of an arbitrary file or directory on sapir (e.g. <TT>/home/kantorp/some-rule.txt</tt>,  <TT>/home/kantorp/my-boards/some-board-dir</tt>,  <TT>/home/kantorp/board-list.csv</tt>). In this way, once an experiment plan with such rules and board directories are created, you can just edit the rules and board files in your own directory on sapir, and whenever a new player is created within that experiment plan, it will use those current rules and boards of yours. (Of course, this activity will mean that a later analysis of the experimental data recorded for these players would make no sense, but one can simply delete those players' data from the database later).
+
+<p>Note that the trial list files for your experiment plan still must be located in an appropriate subdirectory under the main <a href="#trialList">trial list directory</a>.
+    
+  <h2>Read-and-write data: SQL server tables</h2>
+
+<p>We're using a database named <tt>game</tt> in the MySQL server on sapir.
+  
+<p>There are two tables in this database that contain data of importance to  you: <tt>PlayerInfo</tt> and <tt>Episode</tt>.
+
+    <h3><a name="PlayerInfo">PlayerInfo</a></h3>
+
+<p>There is one PlayerInfo entry (table row) for each player.
+    
+<pre>
+mysql> describe  PlayerInfo;
++-------------------+--------------+------+-----+---------+----------------+
+| Field             | Type         | Null | Key | Default | Extra          |
++-------------------+--------------+------+-----+---------+----------------+
+| id                | bigint(20)   | NO   | PRI | NULL    | auto_increment |
+| currentSeriesNo   | int(11)      | YES  |     | NULL    |                |
+| date              | datetime     | YES  |     | NULL    |                |
+| inBonus           | bit(1)       | YES  |     | NULL    |                |
+| playerId          | varchar(255) | YES  |     | NULL    |                |
+| totalRewardEarned | int(11)      | YES  |     | NULL    |                |
+| trialListId       | varchar(255) | YES  |     | NULL    |                |
+| experimentPlan    | varchar(255) | YES  |     | NULL    |                |
++-------------------+--------------+------+-----+---------+----------------+
+</pre>
+
+  <p>The meaning of the columns is as follows:
+
+    <ol>
+      <li>id - the internal integer ID used by the MySQL database for the player. It is not to be consfused with the PlayerID (a string). This ID is only used to link entries in the Episode table with those in the PlayerInfo table.
+      <li>currentSeriesNo - an integer indicating which series the player is currently playing, or is about to start playing. The value is 0-based, which means that a player who has not completed any episodes yet, or is still working under the very first of the parameter sets in his trial list, will have currentSeriesNo=0, etc. If a player's trial list has, for example, 4 rows (4 parameter sets), then once the player has completed all his 4 series, he will have currentSeriesNo=0.
+      <li>date - when the player entered the system (started playing)
+      <li>inBonus - a bit value. It starts with false, and becomes true if/when the player activates his bonus. It will stay true while the player plays episodes of the subseries of his current series; it will become false again one the bonus subseries ends (either with earning a bonus, or with a failure, or with "giving up"), and the player switches to the next parameter set's series.
+      <li>playerId - the string playerId, identifies the player
+      <li> totalRewardEarned - the total number of points earned in all episodes so far, including the "base pay" and any bonuses
+      <li>trialListId - a string that identifies the trial list to which the player has been assigned within his experiment plan
+      <li>experimentPlan  - the expeirment plan to which this player belongs
+    </ol>
+
+
+    <h3>Episode</h3>
+
+  <p>The <tt>Episode</tt> table has one entry (row) for each episode played by each player.
+
+<pre><code>
+mysql> describe  Episode;
++-----------------+--------------+------+-----+---------+----------------+
+| Field           | Type         | Null | Key | Default | Extra          |
++-----------------+--------------+------+-----+---------+----------------+
+| id              | bigint(20)   | NO   | PRI | NULL    | auto_increment |
+| attemptCnt      | int(11)      | YES  |     | NULL    |                |
+| cleared         | bit(1)       | YES  |     | NULL    |                |
+| doneMoveCnt     | int(11)      | YES  |     | NULL    |                |
+| episodeId       | varchar(255) | YES  |     | NULL    |                |
+| givenUp         | bit(1)       | YES  |     | NULL    |                |
+| nPiecesStart    | int(11)      | YES  |     | NULL    |                |
+| stalemate       | bit(1)       | YES  |     | NULL    |                |
+| startTime       | datetime     | YES  |     | NULL    |                |
+| DTYPE           | varchar(255) | YES  | MUL | NULL    |                |
+| bonus           | bit(1)       | YES  |     | NULL    |                |
+| earnedBonus     | bit(1)       | YES  |     | NULL    |                |
+| endTime         | datetime     | YES  |     | NULL    |                |
+| finishCode      | int(11)      | YES  |     | NULL    |                |
+| rewardBonus     | int(11)      | YES  |     | NULL    |                |
+| rewardMain      | int(11)      | YES  |     | NULL    |                |
+| seriesNo        | int(11)      | YES  |     | NULL    |                |
+| PLAYER_ID       | bigint(20)   | YES  | MUL | NULL    |                |
+| guessSaved      | bit(1)       | YES  |     | NULL    |                |
+| bonusSuccessful | bit(1)       | YES  |     | NULL    |                |
+| lost            | bit(1)       | YES  |     | NULL    |                |
+| guess           | varchar(255) | YES  |     | NULL    |                |
+| guessConfidence | int(11)      | YES  |     | NULL    |                |
+| attemptSpent    | double       | YES  |     | NULL    |                |
++-----------------+--------------+------+-----+---------+----------------+
+</code></pre>
+
+ <p>The meaning of the columns is as follows:
+
+    <ol>
+      <li>id - internal episode ID; we can use them to sort episodes in the chronological order, but otherwise we can ignore it.
+      <li>attemptCnt - the number of attempted (successful or unsuccessful) moves. In a game where the player does not know whether a piece is movable until he tries, this also includes attempts to move immovable pieces.
+      <li>cleared - true if the board has been cleared (has no pieces left)
+      <li>doneMoveCnt  - the number of successful moved (i.e. the number of pieces removed from the board)
+      <li>episodeId - a string episode ID used by our system.
+      <li> givenUp - true if the player has explicitly "given up" on this episode, or if it has been found that the episode has been abandoned, and another episode started instead
+      <li>nPiecesStart - the initial number of pieces on the board
+      <li>stalemate - true if the episode has ended in stalemate, i.e. there are some pieces on the board, but none of them can be moved
+      <li>startTime - timestamp
+      <li> DTYPE - ignore this field
+      <li> bonus - true if this episode is part of the bonus series
+      <li> earnedBonus  - true if the bonus reward on completion of this episode.  This typically is the last episode of a successful bonus subseries (i.e. in this series every episode with bonus=true also has bonusSuccessful=true, the number of these episodes is equal to the value of the parameter <tt>clear_how_many</tt>, and this episode is the last one in this subseries).
+      <li> endTime - timestamp
+      <li>finishCode - an integer that summarizes the overall state of the game. The value of 0 means that the episode is still continuing; other values refer to the way in which it has terminated, as per <a href="api/constant-values.html#edu.wisc.game.sql.Episode.FINISH_CODE.FINISH">FINISH_CODE</a>.
+      <li>rewardBonus - the number of bonus points awarded at the completion of this episode. This may be non-zero only if earnedBonus=true.
+      <li>rewardMain - the "base pay" reward, awarded to this episode based on how many moves it took the player to clear the board, according to the formula in Gary's document, <a href="https://rulegame.slack.com/files/UKF4M2Y4D/F019E2J188L/points_gameplay.pdf">points_gameplay.pdf</a>
+	<li>seriesNo - the 0-based number of the current series of episodes played by this user (i.e. the sequential number of the current parameter set in the trial list). After all parameter sets' series have been played, seriesNo is equal to the number of parameter sets in the trial file.
+	  <li>PLAYER_ID - MySQL internal ID of the player; only used to join with the PlayerInfo table
+	  <li>guessSaved - true if the player's guess about the rules has been submitted and recorded at the end of this episode.
+	  <li>bonusSuccessful - true if this was a bonus episode (bonus=true) and the player managed to clear the board sufficiently fast. If a required number of episodes with bonusSuccessful=true is 
+	  <li>lost - bit flag, set to true if the player fails to clear the board in a bonus episode within a required number of moves. Which this happens, the episode is terminated by the server, and so is series.
+	  <li>guess - the text of the guess submitted by the player at the end of the episode. NULL if no guess has been recorded.
+	  <li>guessConfidence - an integer entered by the player in the guess form, to represent his confidence in his guess on a certain numerical scale
+	    <li>attemptSpent - the total cost of all moves (or move attempts) made by the player in this episode. This is only introduced in GS 2.003. Typically, the value is the same as attemptCnt, but if the param set requires that the player make "touch" attempts to identify movable pieces, and those "touch" attempts cost less than one move (<tt>free_wrong_cost</tt> &lt; 1.0), then attemptSpent will be smaller than attemptCnt.
+    </ol>
+
+    <h3> SQL commands examples</h3>
+
+ <p>To view data in the mysql client, simply type
+   <pre>
+     mysql   </pre>
+   on the Linux command prompt on sapir, and then, once logged in to the MySQL server, type
+   <pre>
+     use game;   </pre>
+   to start using the relevant database.
+ </p>
+
+  <p>While you may use commands such as
+    <pre>
+      select * from PlayerInfo;
+      select * from Episode;    </pre>
+    to see the entire tables, various other space saving commands are available. For example, this is how you can view all episodes for a given player, in a compact format:
+   
+    <pre>
+select e.PLAYER_ID, concat(p.playerID, " / ", cast(e.seriesNo as char)) 'P/Ser',
+e.episodeId, e.startTime, e.endTime,
+concat(cast(e.attemptCnt  as char), ":", cast(e.doneMoveCnt as char), "/", cast(e.nPiecesStart as char)) 'Mv/N0',
+concat(cast(e.rewardMain as char), "+", cast(e.rewardBonus as char)) as '$$',
+concat(
+(CASE WHEN (e.bonus) THEN 'b' ELSE '-' END), "/",
+(CASE WHEN (e.bonusSuccessful) THEN 'B' ELSE '-' END), "/",
+(CASE WHEN (e.earnedBonus) THEN 'BB' ELSE '-' END)) as 'Bonus',
+concat(
+(CASE WHEN (e.givenUp) THEN 'G' ELSE '-' END), "/",
+(CASE WHEN (e.lost) THEN 'L' ELSE '-' END), "/",
+(CASE WHEN (e.cleared) THEN 'C' ELSE '-' END), "=",
+cast(e.finishCode as char)) as 'GLC=F',
+substr(concat(cast(e.guessSaved+0 as char), ":", cast(e.guessConfidence as char), ":", e.guess),1,10) 'guess' from PlayerInfo p, Episode e
+where e.PLAYER_ID=p.id and p.playerId= 'vm012' order by startTime;
+    </pre>
+    This produces a table like this:
+    <pre>
++-----------+-----------+------------------------+---------------------+---------------------+-------+------+-------+---------+------------+
+| PLAYER_ID | P/Ser     | episodeId              | startTime           | endTime             | Mv/N0 | $$   | Bonus | GLC=F   | guess      |
++-----------+-----------+------------------------+---------------------+---------------------+-------+------+-------+---------+------------+
+|       136 | vm012 / 0 | 20201014-015309-H534HK | 2020-10-14 06:53:09 | 2020-10-14 06:53:21 | 3:1/2 | 0+0  | -/-/- | G/-/-=3 | NULL       |
+|       136 | vm012 / 1 | 20201014-015321-KDSUUF | 2020-10-14 06:53:21 | 2020-10-14 06:53:37 | 5:4/4 | 9+0  | -/-/- | -/-/C=1 | 1:3:testin |
+|       136 | vm012 / 1 | 20201014-015346-ICKEIG | 2020-10-14 06:53:47 | 2020-10-14 06:54:41 | 6:5/5 | 9+0  | -/-/- | -/-/C=1 | 1:4:testin |
+|       136 | vm012 / 1 | 20201014-015452-IT11CA | 2020-10-14 06:54:53 | 2020-10-14 06:55:01 | 2:1/6 | 0+0  | -/-/- | G/-/-=3 | NULL       |
++-----------+-----------+------------------------+---------------------+---------------------+-------+------+-------+---------+------------+</pre>
+    The semantics of the columns is as follows:
+    <ul>
+      <li>P/Ser = playerId and series number (= row number in the trial list file), zero-based
+      <li> Mv/N0 = MoveAttempts:SucccessfulMoves/InitialNumberOfPieces
+      <li>$$ = rewardMain + rewardBonus issued for this episode
+      <li>Bonus = b/B/BB, where b = bonus episode, B = successful bonus episode , BB = final successful bonus episode (the one where the bonus is paid)
+      <li>GLC=F = the givenUp, lost, cleared flags, and the finishCode
+      <li>guess = guessSaved:confidence:truncatedText, where guessSaved is a boolean (0/1) flag, which is set when the guess is recorded.
+    </ul>
+    </p>
+
+  <p>Instead of <tt>and p.playerId='vm012'</tt> you can type any other selection clause, e.g. <tt>and p.playerId like 'Aria%'</tt> or  <tt>and e.startTime>'2020-10-10'</tt>.
+
+    e.startTime> '2020-10-10' order by startTime;
+    
+    <h3><a name="export">Exporting data from the MySQL database to CSV files</a></h3>
+
+ <p>There are many ways to export the content of SQL tables to CSV files. As an example, I have supplied a script that resides on sapir in <code>~vmenkov/w2020/game/sql/export.sh</code>. In order to be able to use this particular script, you must have possess several qualifications:
+<ul>
+  <li>Be a UNIX user with a membership in <tt>mysql</tt> group. (This is needed to be able to access MySQL's export directory; presently, I set permissions for it with g+rwX).
+  <li>Have a MySQL server account
+  <li>Have password-less access to this account. (This is configured using the <tt>auth_socket</tt> plugin, so that the MySQL server allows you to access the databases based on your UNIX user credentials)
+</ul>
+
+<p>
+Before using the script, switch to your <tt>mysql</tt> group:
+<pre>
+  newgrp mysql
+</pre>
+Then run the script:
+<pre>
+~vmenkov/w2020/game/sql/export.sh
+</pre>
+This will create 2 CSV files, PlayerInfo.csv and Export.csv, in your current directory. There are no header lines in them, but the columns are ordered the same way as described above.
+
+<h2><a name="saved">Write-only data</a></h2>
+
+<p>At the end of each episode, the Game server saves the essential information about the episode into CSV file. That includes the initial board description, all the attempted moves (successful and unsuccessful), and any guess submitted by the player.
+
+  <h3>The initial board</h3>
+
+  <p>The initial boards are saved in  /opt/tomcat/saved/boards/ , in file names based on the PlayerID + ".board.csv".  The GS 1.* and 2.* format:
+<pre>
+       more /opt/tomcat/saved/boards/qt-07.boards.csv
+#playerId,episodeId,y,x,shape,color
+qt-07,20200910-122815-2S2435,4,1,STAR,BLACK
+qt-07,20200910-122815-2S2435,5,4,STAR,BLACK
+qt-07,20200910-123116-PRDLET,3,1,TRIANGLE,BLACK
+qt-07,20200910-123116-PRDLET,5,1,TRIANGLE,BLACK
+</pre>
+In the GS 3.*, one more column, <tt>objectType</tt> is added to identify image-and-property-based objects (for which the <tt>shape</tt> and  <tt>color</tt> columns contains the  <tt>null</tt> value); for such objects, this column contains an identifying string for the image. For the traditional shape-and-color-tuple objects, the  <tt>objectType</tt> column contains a string based on the shape and color, e.g. <tt>RED_STAR</tt> (analogously to the <tt>objectType</tt> column that has existed in he detailed transcripts file since GS 1.*).
+<pre>
+#playerId,episodeId,y,x,shape,color
+qt-07,20200910-122815-2S2435,4,1,null,null,vm/image_test_01/cat-01.png
+....
+</pre>
+
+<p>For each piece, we have it y and x coordinates (y=row, x=column), shape and color.
+
+<h3>The transcript</h3>
+
+ <p>The transripts are saved in  /opt/tomcat/saved/transcripts/ , in file names based on the PlayerID + ".transcripts.csv".
+
+<pre>
+more /opt/tomcat/saved/transcripts/qt-07.transcripts.csv 
+#pid,episodeId,moveNo,timestamp,y,x,by,bx,code
+qt-07,20200910-122815-2S2435,0,20200910-122851,4,1,0,0,0
+qt-07,20200910-122815-2S2435,1,20200910-122902,5,4,7,0,0
+qt-07,20200910-123116-PRDLET,0,20200910-123125,3,1,7,7,0
+qt-07,20200910-123116-PRDLET,1,20200910-123151,5,1,7,7,0
+</pre>
+
+<p>For each move, we have the coordinates (y=row, x=column) of the piece that the player tries to move, and of the destination bucket. (The four buckets are supposed to be located in columns 0 and 7, and rows 0 and 7).
+
+<p>The last column, <tt>code</tt>, contains the server response. The value of 0 is recorded when the move attempt is successful; positive values (usually 4, sometimes 2) are recorded on rejections, as per <tt><a href="api/constant-values.html#edu.wisc.game.sql.Episode.CODE.ACCEPT">CODE</a></tt>.
+
+
+<p><strong>Note: in certain circumstances the Game Server may save a partial transcript before the episode is completed, and then write out the full transcript again at the end of the episode. It is recommended that the data user remove duplicate lines from each transcript before analyzing the data.</strong>
+  
+  <h3>The detailed transcript</h3>
+
+<p>The detailed transripts are saved in  /opt/tomcat/saved/detailed-transcripts/ , in file names based on the PlayerID + ".-detailed-transcripts.csv".
+
+<p>The schema of these CSV files is as per Aria Duan's request (see  
+<a href="https://rulegame.slack.com/files/U014SRY7Q5Q/F01AX29T9HR/paul01.transcripts_revised.xlsx">paul01.transcripts_revised.xlsx</a> on Slack). All sequential indexes (series No., episode No., move No.) are 0-based.
+
+<pre>
+/opt/tomcat/saved/detailed-transcripts$ more qt-02.detailed-transcripts.csv 
+#playerId,trialListId,seriesNo,ruleId,episodeNo,episodeId,moveNo,timestamp,reactionTime,objectType,objectId,y,x,bucketId,by,bx,code,objectCnt
+qt-02,trial_1,1,TD-02,0,20200923-130509-VP7ECA,0,20200923-130521.677,11.829,BLUE_TRIANGLE,0,3,3,1,7,7,0,1
+qt-02,trial_1,1,TD-02,0,20200923-130509-VP7ECA,1,20200923-130535.256,13.579,BLUE_TRIANGLE,1,5,6,1,7,7,0,0
+qt-02,trial_1,1,TD-02,1,20200923-205001-F18F6J,0,20200923-205021.973,20.923,YELLOW_TRIANGLE,1,4,1,2,0,7,0,2
+qt-02,trial_1,1,TD-02,1,20200923-205001-F18F6J,1,20200923-205036.976,15.003,YELLOW_TRIANGLE,2,4,3,2,0,7,0,1
+qt-02,trial_1,1,TD-02,1,20200923-205001-F18F6J,2,20200923-205053.298,16.322,YELLOW_TRIANGLE,0,3,5,2,0,7,0,0
+qt-02,trial_1,1,TD-02,2,20200923-211803-VPL2LF,0,20200923-211813.309,10.306,BLACK_CIRCLE,1,6,2,3,0,0,0,1
+qt-02,trial_1,1,TD-02,2,20200923-211803-VPL2LF,1,20200923-211821.644,8.335,BLACK_CIRCLE,0,2,4,3,0,0,0,0
+qt-02,trial_1,1,TD-02,3,20200923-211834-AR21RU,0,20200923-211846.699,12.453,RED_TRIANGLE,1,3,4,2,0,7,4,3
+qt-02,trial_1,1,TD-02,3,20200923-211834-AR21RU,1,20200923-211858.671,11.972,RED_TRIANGLE,1,3,4,0,7,0,0,2
+qt-02,trial_1,1,TD-02,3,20200923-211834-AR21RU,2,20200923-211911.614,12.943,RED_TRIANGLE,2,6,4,0,7,0,0,1
+qt-02,trial_1,2,TD-03,0,20200923-211954-8M8E8V,0,20200923-212014.455,20.221,RED_SQUARE,1,4,3,3,0,0,0,1
+qt-02,trial_1,2,TD-03,0,20200923-211954-8M8E8V,1,20200923-212025.978,11.523,RED_SQUARE,0,3,3,1,7,7,0,0
+</pre>
+
+<p>Note that even though the name of the experiment plan to which a player belongs is not explicitly listed as a separate column; however, it can be extracted from the player Id.
+
+<p>One may also "join" this information with information from the Episode table if, for example, one wants to look at the finishCode column.
+
+<p>The <tt>objectType</tt> column contains, for the traditional shape-and-color-tuple objects, a value such as <tt>BLACK_SQUARE</tt>. For the image-and-properties-based objects in GS 3, this column contains the same value as the <tt>image</tt> column of the initial boards CSV files, e.g. <tt>vm/image_test_01/cat-01.png</tt>.
+
+<h3>The guess</h3>
+
+
+ <p>The guesses are saved in  /opt/tomcat/saved/guesses/ , in file names based on the PlayerID + ".guess.csv".
+
+<pre>
+/opt/tomcat/saved/guesses$ cat qt-02.guesses.csv 
+#playerId,trialListId,seriesNo,ruleId,episodeNo,episodeId,guess,quessConfidence
+qt-02,trial_1,1,TD-02,2,20200923-211803-VPL2LF,the guess will go here,3
+qt-02,trial_1,1,TD-02,3,20200923-211834-AR21RU,this episode will have lost=true,3
+qt-02,trial_1,2,TD-03,0,20200923-211954-8M8E8V,"here, is also a guess, for the next series maybe",4
+</pre>
+
+
+<h2>Working with the data</h2>
+
+ <p>Below are some examples of how, in general terms, the data can be processed. While the discussion of the data processing in each example is given in general terms, it is not difficult to convert it to specific SQL queries or operations with lists and hash tables in a language such as Perl or Python.
+
+   <h3>Example 1: Identify and analyze all episodes played by the rules of a particular rule set R by players enrolled in a particular experiment plan E</h3>
+
+ <p>This can proceed as follows:</p>
+
+ <ol>
+
+   <li>Scan the trial list files in the directory for experiment plan E, creating a table that indicates, for each trial list name, what position (0-based) in that trial list the rule set R occupies. Let's call this table T1.
+ 
+   <li>From the PlayerInfo table, select the playerId and the internal database id of all players who are enrolled in experiment plan E. One can call the resulting table T2.
+
+   <li>Using table T1, and each player's trial list name (as recorded in the PLayerInfo table) determine, for each of the players identified in the previous step, what is the seriesNo of the series played by rule set R. Let's call the resulting table (mapping the internal database id of the player to the relevant seriesNo) T3.
+
+   <li>Now, look at the Episode table, and use table T3 to retrieve the Episode entries where the player is one of those participating in experiment E, and the rule set is R. Let's call this list of episodes "table T4". 
+
+   <li>By looking at table T3, one can find out all relevant statistics about the episodes under consideration, e.g. how many pieces were initially on the board in each experiment, whether the episode was completed or given up,  and how many moves it took to clear the board.
+
+   <li>Furthermore, if the specific initial board positions and the episode transcripts are of interest, the relevant lines  can be retrieved from the files in the boards and transcripts directories. One needs to look at the files corresponding to the players listed in T1, and from these files, select lines where the episode ID is in the list T4.
+
+     </ol>
+
+  
+
+   
+
+   
+
+   
+   <hr>
+
+
+<p><em>I will write one more section here, explaining how to put the data together, on a few simple examples.</em></p>
+
+<h2>See also</h2>
+
+<ul>
+  <li><A href="analyze-transcripts.html">analyze-transcripts.sh</a>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,180 @@
+<html>
+  <head><title>Standard Operating Procedures: Building and deploying the Game Server</title>
+    <link rel="stylesheet" type="text/css" href="css/rule-game.css"/>
+  </head>
+<body>
+  <h1>Standard Operating Procedures: Building and deploying the Game Server</h1>
+
+    <p align="center"><em>Updated 2021-04-02.</em></p>
+
+<p class="yellow">Note: in this document, sections of importance for experiment designers (Aria, Ellise, Gary...) are in yellow. The rest is primarily of importance only to those who work with the server code.</p>
+    
+<h2>Maintaining and deploying server code and server data</h2>
+
+<p>The Game Server source code (including documentation web pages) and the <a href="data.html#in">experiment control files (read-only data)</a> (CSV files which control the experiments) are handled as outlined in the chart below:</p>
+
+<a href="img/deploy.svg"><img src="img/deploy.png" height="600"></a>
+
+  <p>The chart includes the following locations:
+
+    <ul>
+      <li><strong>1. The GitHub repository for the code</strong> is the place where the "master copy" of the server code is stored. The location is as follows: <a href="https://github.com/vmenkov/Rule-Game-server">Rule-Game-server</a>. If you need access to this project, send your Github account name to Vladimir, and ask to add you to the list of contributors.
+
+      <li><strong>2. Your work directory, for working on server code, on your home of office computer.</strong> You can create and modify code and data files on any computer which is convenient for you to use, such as your home or office computer. For illustration, let's assume that the place where you work on this project is <tt>~/w2020</tt>.
+	
+      <li><strong>3. Your work directory on <tt>sapir</tt>.</strong> <tt>Sapir</tt> is just a Linux machine, and is as good as any place to work on editing more files. However, your work directory on sapir (let's assume it's also  <tt>~/w2020</tt>) is a particularly important place, since from there you can deploy code and data to the server directory.
+
+      <li><strong>4. "live" code.</strong> The "running" Web Rule Game server's code is located in <tt>/opt/tomcat/webapps/w2020</tt>. You don't touch this directory directly, but deploy code there using the procedure outlioned in (c) below.
+
+	
+      <li class="yellow"><strong>5. The GitHub repository for the data</strong> is the place where the "master copy" of the server's read-only data, i.e. the experiment control files,  is stored. The location is as follows:
+		 <a href="https://github.com/lupyanlab/Rule-Game-game-data">Rule-Game-game-data</a>  (To see this page, you must be an authorized user at <a href="https://github.com/lupyanlab">Lupyan Lab</a>, and you must be currently logged in to GitHub. Otherwise, you'll just see Error 404. If you need access to this project, send your Github account name to Kevin, and ask to add you to the list of contributors.)
+
+
+   <li class="yellow"><strong>6. Your work directory, for working on server data on any computer.</strong> You can create and modify code and data files on any computer which is convenient for you to use, such as your home or office computer, or sapir. For illustration, let's assume that the place where you work on this project is <tt>~/w2020</tt>.
+   	
+
+   <li class="yellow"><strong>7. "Live" data.</strong>  The "running" Web Rule Game server reads its experiment control files (read-only data) from CSV, TXT, and SVG files that are located under  <tt>/opt/tomcat/game-data</tt>. In order to ensure that your files don't just disappear after a subsequent deployment, you should not edit data files directly in this directory.
+    </ul>
+  </p>
+
+<p>Staff who work with the server code may carry out the following procedures:
+       <ul>
+	 <li><strong>(a) Check out code.</strong> Before you start working on the server code, either on your home computer (2) or on sapir (3), you need to get the current version of the project's files from the GitHub server. You can do it as follows:
+	   <pre>
+  cd ~/w2020	     
+  mkdir game
+  cd game
+  git init
+  git remote add origin https://github.com/vmenkov/Rule-Game-server.git
+  git pull origin master	   </pre>	   
+	   Later, you can update the files in your working directory from the Github repository every now and then as follows:
+	   <pre>
+  cd ~/w2020/game	     
+  git pull origin master	   </pre>
+	   This is something you may want to do every time when you think that other team members may have checked in their updates. This will ensure that their updates will propagate to your working version, and will reduce the chance of edit conflicts.
+
+	   <p>
+Besides <tt>git</tt>, there are various other command-line and visual client applications that work with Github (e.g. <tt>svn</tt>). If you use one of those, modify the above commands as appropriate for your client.
+	   <br>
+	   Various subdirectories of <tt>game</tt> containing the following materials:
+	   <ul>
+	     <li><tt>game-data</tt> - read-only data files (rule sets, experiment plans, etc). See the <a href="data.html#in">Data Guide</a> for more info). <strong>Don't use this subdirectory -- it's superseded by a new, separate repository!.</strong>
+	     <li><tt>web</tt> - documentation
+	     <li><tt>src</tt> - server source code
+	   </ul>
+	 </li>
+	 <br>
+	 
+	 <li><strong>(b) Check in code.</strong> Once you have done some work in your working directory (either on your home computer (2) or on sapir (3)), you may want to send your updated files to the Github repository, so that you or other contributors can continue working with them on other machines. Do it as follows:
+	   <ol>
+	     <li>If you have created any new files or directories, make sure that they are tracked by the version control. For example, if you have created a new document named <tt>foo.html</tt>, you can "register" them with the version control with
+	       <pre>
+  cd ~/w2020/game
+  git add web/foo.html	       </pre>
+	       <li>Send all new and updated files to the Github repository:
+	       <pre>
+  cd ~/w2020/game
+  git commit -a	     
+  git push origin 	     </pre>
+</ol>
+	 <li><strong>(c) Deploy code to production server.</strong> If you have modified the server code and want to deploy it to the "live" production server, you can do it as follows:
+	   <ol>
+	     <li>Make sure that the directory <tt>/opt/ant/bin</tt> has been added to your PATH on sapir (edit your <tt>.cshrc</tt>, <tt>.login</tt>, or what have you).
+	     <li>Make sure that the working directory on sapir contains the current version of the code (it is current because you have either just modified it right here, or have pulled the current version from Github, as per (a)).
+	       <li>Execute the following commands:
+		 <pre>
+  cd ~/w2020/game
+  ant clean javadoc war
+  cp ../w2020.war /opt/tomcat/webapps	     </pre>
+		 The <tt>ant</tt> command above compiles the source code, and packs the compiled code, along with the documentation and third-party libraries, into a large file in <a href="https://en.wikipedia.org/wiki/WAR_(file_format)">WAR</a> format. The <tt>sudo cp</tt> command above copies that WAR file to a directory from which the Apache Tomcat server will automatically pick it and deploy it to the server web application directory, updating all necessary files in <tt>/opt/tomcat/webapps/w2020</tt>. Your applications will then be visible at the web server, at a URL such as <tt>http://localhost:8080/w2020/</tt> or <tt>http://sapir.psych.wisc.edu:7150/w2020/</tt> (depending on what host you are deploying it at, and what port the Tomcat server on that host is using).<br>
+		 If the <tt>cp</tt> command above fails because you don't have the right permissions, see the <a href="#permissions">permissions section</a> below; or, if you are very impatient, just repeat the command with <tt>sudo</tt>, i.e.
+<pre>sudo cp ../w2020.war /opt/tomcat/webapps	     </pre>
+	   </ol>
+	   Note that the above only deploys the code, but not the data; to deploy the data, use (d) below instead.<br><br>
+
+<li><strong>(c') Deploy code to development server.</strong> Along with the main (production) web application, <tt>w2020</tt>, your Tomcat server can also run a development web applicatin, <tt>w2020-dev</tt>. To deploy your code as the development application, run <tt>ant</tt> with the target   <tt>war-dev</tt>, rather than  <tt>war</tt>. That will produce a differently-named WAR files, for you to install in the webapps directory:
+  		 <pre>
+  cd ~/w2020/game
+  ant clean javadoc war-dev
+  cp ../w2020-dev.war /opt/tomcat/webapps	     </pre>
+       </ul>
+
+
+<div class="yellow">  
+<p>Staff working with the experiment control files may carry out the following operations:
+       
+       <ul>
+	 <li><strong>(d) Check out the data.</strong> Before you start working on the server data, in the work directory (6), either on your home computer or on sapir, you need to get the current version of the project's files from the GitHub server. You can do it as follows:
+	   <pre>
+  cd ~/w2020	     
+  mkdir game-data
+  cd game-data
+  git init
+  git remote add origin https://github.com/lupyanlab/Rule-Game-game-data.git
+  git pull origin master	   </pre>	   
+	   Later, you can update the files in your working directory from the Github repository every now and then as follows:
+	   <pre>
+  cd ~/w2020/game-data	     
+  git pull origin master	   </pre>
+	   This is something you may want to do every time when you think that other team members may have checked in their updates. This will ensure that their updates will propagate to your working version, and will reduce the chance of edit conflicts.
+
+	   <p>
+Besides <tt>git</tt>, there are various other command-line and visual client applications that work with Github (e.g. <tt>svn</tt>). If you use one of those, modify the above commands as appropriate for your client.
+	   <br>
+	   Various subdirectories of <tt>game-data</tt> contain a variety of data files, as per the <a href="data.html#in">Data Guide</a>.
+	 </li>
+	 <br>
+	 
+	 <li><strong>(e) Check in the data and automatically deploy them to the server.</strong> Once you have done some work in your working directory, you may want to send your updated files to the Github repository, so that you or other contributors can continue working with them on other machines. Do it as follows:
+	   <ol>
+	     <li>If you have created any new files or directories, make sure that they are tracked by the version control. For example, if you have created a new experiment plan named <tt>MyPlan</tt> and the rule sets named <tt>My-Rule-01.txt</tt> thru
+ <tt>My-Rule-01.txt</tt>, you can "register" them with the version control with
+	       <pre>
+  cd ~/w2020/game-data
+  git add trial-lists/MyPlan rules/My-Rule-*.txt	       </pre>
+	       <li>Send all new and updated files to the Github repository:
+	       <pre>
+  cd ~/w2020/game-data
+  git commit -a	     
+  git push origin 	     </pre>
+	   </ol>
+
+	   <p>Kevin has set up the repository in such a way when you check your local copy of the data (with <tt>git push ...</tt>), the data are immediately automatically deployed to the server. If you log in to sapir, go to <tt>/opt/tomcat/game-data</tt> and check the time stamp and ownership of a file you have recently added and pushed to the repository, you will see that it will have a recent time stamp, and will be owned by user <tt>kmui</tt>.
+
+	     <p>If you have <strong>modified</strong> an existing trial list file or a rule set file that you have previously used in some episodes, you may want to <a href="game-api-2.html#clear">clear the server tables</a>, in order to force the Game Server to re-read and re-compile that file before you play with it again.
+	   
+       </ul>
+</p>
+</div>  
+
+
+<h2>Production server vs. development server</h2>
+
+<p>As discussed above ((c) vs. (c')), the two are implemented as two web apps within the same Tomcat server. Both presently (ver. 2.001) use the same data files and the same MySQL database. This normally should not cause problems, unless you make the kind of change (in dev vs prod) that requires a change in the database schema.
+
+  <h2><a name="permissions">File ownership and permissions</a></h2>
+
+<p>On a Linux system, every file and directory is owned by a specific user account, and is assigned to a specific UNIX user group. Most of the files under <tt>/opt/tomcat/webapps</tt> on sapir are owned by user <tt>tomcat</tt>, group <tt>tomcat</tt>, and it's a good idea to keep it this way, or as close to it as possible. Therefore, one of the two ways of copying your WAR file to that directory is encouraged.
+
+  <h3>Being a member of group <tt>tomcat</tt></h3>
+
+<p>Presently, most team members have been enrolled into the UNIX group <tt>tomcat</tt>. If you are one of those, then, when you log in to sapir, just type
+  <pre>newgrp tomcat</pre>
+  and all your subsequent interactions with the system will be as a member of that group. So you should be able to copy files to  <tt>/opt/tomcat/webapps</tt>, since that directory is group-writeable.
+
+  <h3>Using <tt>sudo</tt></h3>
+
+  <p>
+If you have <tt>sudo</tt> rights, you of course can copy WAR files to the webapps directory using sudo. But if you do that, do a nice thing and change their ownership to <tt>tomcat.tomcat</tt> thereafter, so that they won't be in the way of other people:
+  <pre>sudo cp ../w2020.war /opt/tomcat/webapps
+sudo chown tomcat.tomcat      /opt/tomcat/webapps/w2020.war
+  </pre>
+
+  
+<h2>Client code</h2>
+
+  <p>The client (the TypeScript/React/JavaScript application that runs inside the web browser) has its own Github repository,    <a href="https://github.com/lupyanlab/Rule-Game">Rule-Game</a>. Kevin can provide more details on the deployment process.
+
+</body>
+</html>

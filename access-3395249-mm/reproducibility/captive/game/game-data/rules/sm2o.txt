@@ -1,0 +1,2 @@
+# [Shape Match 2 Options] Each shape mapped to two buckets
+(*,star,*,*,[1,3]) (*,triangle,*,*,[0,2]) (*,square,*,*,[1,3]) (*,circle,*,*,[0,2])

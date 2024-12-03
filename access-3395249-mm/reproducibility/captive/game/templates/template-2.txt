@@ -1,0 +1,17 @@
+# For each shape, there are two randomly chosen permanent designated
+# buckets (sometimes just one, if both random choices are identical).
+# For each shape, there is a specific randomly chosen order (e.g. T,
+# B, L1) in which they can be picked from the board. For each shape,
+# a certain number of pieces (Xcnt, ranging from 1 to 4, as per the
+# param file) can be picked before the control falls to the next line.
+#
+# For randomly chosen orders, such a rule set will very often stalemate.
+# In one experiment, only 4 non-stalemating rule sets were generated
+# out of 100*10 attempts. The successful ones are those which happened
+# to have all compatible orders (e.g. T and L1).
+#-----------------------------------------------------------------
+
+(Xcnt, Circle, *, X, [X,X])
+(Xcnt, Star, *, X, [X,X])
+(Xcnt, Square, *, X, [X,X])
+(Xcnt, Triangle, *, X, [X,X])

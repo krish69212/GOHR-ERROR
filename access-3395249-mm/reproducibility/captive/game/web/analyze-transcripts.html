@@ -1,0 +1,235 @@
+<html>
+  <head><title>The Analyze Transcripts tool</title>
+  </head>
+<body>
+  <h1>The Analyze Transcripts tool</h1>
+
+<div align="center"><em>Updated 2021-12-27, for Game Server 4.005</em></div>
+
+  <p>The Analyze Transcripts tool can be used to extract transcripts for specified experiment plans, specified players, or specified repeat users, and to carry out certain types of data analysis.
+
+<p>When processing trasnscripts, the analyzer removes duplicate entries (which are sometimes written by the server) and entries with code 3 "empty cell", because our researchers become sad when they see players grabbing at empty cells (i.e. already-removed pieces).
+
+  
+<h2>Usage - overview</h2>
+  
+  <p>In general, the usage of the script can be described as follows:
+
+<re>
+      /home/vmenkov/w2020/game/scripts/analyze-transcripts.sh <em>[options]</em> <em>data_selector</em>
+</pre>
+    where <em>data_selector</em> specifies the set of transcripts to extract, and  <em>options</em> specify the mode of processing.
+</p>
+
+    <h2>Data selection</h2>
+<p>There are several data selection modes, illustrated below. To save space, the script name in the examples below is given without the full path, which in reality you will need to indicate. The output goes to directory named <tt>tmp</tt> (or another chosen directory -- see <tt>-out</tt>, below). If that directory does not exist, the tool will create it.
+
+  <h3>1. Select experiment plans</h3>
+  <pre>      
+analyze-transcripts.sh <em>[options] plan1 [plan2...]</em>
+  </pre>
+   e.g.
+  <pre>      
+analyze-transcripts.sh pilot06
+  </pre>
+  or
+  <pre>      
+analyze-transcripts.sh '%OCT26%'
+  </pre>
+
+<p>
+(You can also write <code>analyze-transcripts.sh -plan '%OCT26%'</code>, but the <tt>-plan</tt> option is unnecessary, since selection by plan name is the default selection method).
+
+<p>
+As the above example shows, the percent character can be used for wildcard-based selection, to select all matching plans. The percent character can also be used in all other selectors discussed below.  (We use '%' rather than '*' because that's what used in the SQL server. It also avoids certain problems with  command line processing).
+
+<p>Specifying an experiment plan is equivalent to specifying a list of player IDs (see 2 below) that includes all player IDs assigned to that experiment plan.
+
+    <h3>2. Select player IDs</h3>
+
+<p>In the Rule Game Server, a player ID corresponds to a round of one or several series of episodes played according to a particular trial list. An M-Turker has a single player id, while a repeat user may have multiple ones.
+  <pre>      
+analyze-transcripts.sh -pid <em>playerId1 [playerId2 ...]</em>
+  </pre>
+  E.g.
+  <pre>      
+analyze-transcripts.sh -pid 'pk%'
+  </pre>
+or
+  <pre>      
+analyze-transcripts.sh -pid 'RepeatUser-%'
+  </pre>
+(The second examples picks all player IDs created by GS4's repeat users, since that's what their player IDs look like).      
+
+  <h3>3. Select by repeat user ID</h3>
+
+<P>Internally, repeat users are identified by unique user IDs. (You can see IDs for various player e.g. by logging in to the SQL server with <tt>mysql</tt> and issuing commands such as
+  <Pre>
+use game;
+select * from User;
+  </pre>
+
+<p>
+  One can pass a list of user IDs to the Analyze Transcript tool as well, as follows:
+  <pre>      
+analyze-transcripts.sh -uid <em>uid1 [uid2 ...]</em>
+  </pre>
+  E.g.
+  <pre>      
+analyze-transcripts.sh -uid 2 3 6
+  </pre>
+</p>
+
+<p>Selecting data by specifying a repeat user ID is equivalent to selecting by player ID and listing all player IDs associated with that repeat user.
+    	 
+<h3>4. Select by repeat user nickname</h3>
+
+<p>A repeat created via the login screen may have a nickname. You can see the nicknames of repeat users with the same SQL command. The Analyze Transcript tool can take a list of user nicknames instead of a list of user IDs, e.g.  
+  <pre>      
+analyze-transcripts.sh -nickname 'John%Doe' '%Walrus%'
+  </pre>
+
+
+<p>Note that one should not use spaces inside command-line arguments. If your nickname has a space inside it, you may use a percent sign (%) on the command line above instead.  
+</p>
+
+<h2>Options controlling input and output</h2>
+
+
+<p>If you have a large list of arguments (e.g. player IDs), you can put them in a CSV file (one items per line, to be read from the first column of the file; all other columns are ignored), and use the <code>-file</code> option on the command line. E.g.
+  <pre>      
+analyze-transcripts.sh -pid -file my-pid-list.csv
+  </pre>
+
+<p>This is handy if, for example, you have a list of "good" players prepared for you separately by another team.
+
+<p>Normally, the Transcript Analyzer reads saved data (transcripts etc) from <tt>/opt/tomcat/saved</tt>. However, this can be changed with the option <tt>-in <em>input_dir_name</em></tt>.  If you do that, make sure that you are still connecting to the right MySQL server, i.e. the data in the SQL server are consistent with the data in the input directory.
+  
+<p>You can use the option <code>-out <em>directory_name</em></code> to have the output written to a directory other than the default <tt>tmp</tt>.
+
+
+<h2>Options controlling data processing</h2>
+
+
+<p>The Transcript Analyzer identifies all episodes played by specified players (or the players in the specified experiment plan), and writes out a separate transcript section file for each (player, rule set) combination (i.e. for each series played by each player). Additional computations are controlled by the options that appear on the command line before the selection specifiers.
+
+<p><strong>1. If the <tt>-pre</tt> option is given</strong>, an additional column named <tt>precedingRules</tt> is produced in split transcript files. The value in this column describes the player's experience prior to starting playing with the current rules set. Specifically, this column contrains the list of the rule sets that preceded the current rule set in the trial list, in the chronological order, separated by semicolons. Naturally, if the current rule set is the first rule set in the trial list, the    <tt>precedingRules</tt> column will be empty.
+
+<p><strong> 2. Curve fitting.</strong> If the <tt>-nofit</tt> option is given, no additional computations are carried out.
+
+<p>Otherwise, log-like curve-fitting is carried out, either with no <em>p</em><sub>0</sub>, or with <em>p</em><sub>0</sub>, computed based on a particular baseline player model. Currently, two such models are supported:
+  <ul>
+    <li><tt>-p0 random</tt> -- Completely Random Player (understands notaion, but has no memory)
+    <li><tt>-p0 mcp1</tt> -- MCP1 (Minimally Competent Player 1 -- one who does not repeat failed move/pick attempts until the board position changes.) 
+  </ul>
+
+<p>The value of <em>p</em><sub>0</sub> for each move attempt is written as a last column of each transcript section file, when applicable.
+
+<p>The curve fitting parameters are written into a file named <tt>summary-flat.csv</tt>, <tt>summary-p0-COMPLETELY_RANDOM.csv</tt>, or <tt>summary-p0-MCP.csv</tt>, as the case may be.
+
+<p><strong>3. Board positions.</strong> If the <tt>-boards</tt> option is supplied, the analyzer saves the board position before each move. It is written into the same CSV output file, in a column named "board" that follows the column "p0". The board  description is saved in a JSON format, similar to what is used in the client-server communication (as illustrated in the <a href="ame-api-2.html">Game API</a> document, under <tt>/display</tt>).
+
+<p>This option can only be used with the <tt>-p0...</tt> option.
+  
+  <h2><a name="p0">The computation of p0</a></h2>
+
+<p>Computing the p0 in a sensible way is somewhat complicated by the fact that, when we see a "failed pick" recorded in the transcript, we do not know what the player's true intention was: did he hope to move a game piece into a bucket (but could not, because the piece wasn't movable), or did he just want to find if the piece is movable (with the intent to just drop it even if it was)?
+
+  <table border=1>
+  <tr><th>What the player wanted to do <th> How the system responded
+    <Th>What was recorded
+  </tr>
+  <tr>
+    <td rowspan="2">Find out if a piece was movable
+    <td> Can't be moved
+    <Td>Failed pick
+  </tr>
+  <tr>
+    <td> Can be moved (and then the player drops it in the middle of the board)
+    <td>Successful pick
+   </tr>
+  <tr>
+    <td rowspan="3">Move the piece to a bucket of his choice
+    <td> Can't be moved
+    <Td>Failed pick
+  </tr>
+  <tr>
+   <td> Can  moved, but not to the chosen bucket
+   <td>Faied move
+  </tr>
+  <tr>
+   <td> Can be moved to the chosen bucket
+   <td>Successful move
+  </tr>   
+  </table>
+  
+<p>If the latter were the case, then we would also see a lot of successful picks in our transcripts, and we don't. Therefore, we compute p0 for failed picks based on the first assumption, i.e. give them the same value as for moves (succsesful and failed).
+
+<p>There are still some successful picks in the record. I am inclined to explain them primarily by "slips of the fingers" (it's not that easy to uses a mouse or a touchscreen device error-free, so in some cases a player can accidentally drop a piece on the board before it's brought to a bucket). Nonetheless, for them we compute p0 as if they, indeed, resulted from an intent to just try a pick
+  
+
+  <h3>The  Completely Random Player</h3>
+
+<p>A completely random player has no memory whatsoever of his actions. Every time, it randomly chooses a piece, and a destination bucket, and makes an attempt to move the chosen piece to the chosen bucket. Accordingly, the value of p0 for all successful and failed move attempts, and for failed pick attempts, is computed as
+  <em> p0 = B/(4*m),</em>
+  where <em>m</em> is the number of pieces on the board, and <em>B</em> is the number of possible moves (i.e., of allowed-move pairs (origin,destination)). For sucessful picks, we use
+  <em> p0 = M/m,</em>
+  where <em>M</em> is the number of movable pieces currently on the board.
+
+    <h3>MCP1 (Minimally Competent Player 1</h3>
+
+<p>This models a player who does not repeat failed move/pick attempts on the same unchanged board. That is, if he has a failed pick for piece A, it won't make another attempt to pick or move A. If he has a failed move attempt for piece A to bucket <em>b</em>, than he won't try to move A to b again, but he still may try to move A to other buckets. However, MCP1 does not make any "positive inferences", along the lines of, "if I have had a failed move attempt for piece A to bucket b, this must mean that one of the other 3 destinations for A is allowed", or "if I have had a succsessful pick attempt for A, it means that A has at least one allowed destination". Accordingly, the p0 for MCP1 are computed as follows:
+  <p>
+  <table>
+    <tr><td> p0 = B/(4*m - F), <td> for failed and successful moves and for failed picks
+    </tr>
+    <tr><td>p0 = M/(m-f), <td> for successful picks.
+  </tr></table>
+
+  <p>
+  Here, F is the number of "known impossible moves", which includes all (piece,bucket) pairs which can be inferred from a failed move or from a failed pick. (A failed pick, of course, results in  4 such known impossible pairs). Similarly, f is the number of "known immovable pieces", which counts pieces for which the player has had a failed pick in the current position, or 4 failed moves (trying all 4 buckets) in the current position.
+
+  <p>The values of F and f reset to 0 once a piece is successfully removed from the board and the board position changes. In other words, an MCP does not retain any memory of his actions from one position to the next.
+ 
+  <h2>Examples</h2>
+
+  <h3>Example 1</h3>
+
+<P>(Here, we assume that we run the script in <tt>/home/vmenkov</tt>. If running in your own directory, adjust the paths as appropriate).
+  
+<p>Let's say that we have a list of "interesting" playerIDs in the file  w2020/slack/pid.csv. (This is based on what Gary's team sent in late October 2021). We just want to extract and split the transcript data for these players, without curve fitting.
+
+
+<pre>
+w2020/game/scripts/analyze-transcripts.sh -nofit -pid -file w2020/slack/pid.csv  -out tmp-3-flat >& tmp.log
+w2020/game/scripts/analyze-transcripts.sh -p0 random -nofit -pid -file w2020/slack/pid.csv  -out tmp-3-random >& tmp.log
+w2020/game/scripts/analyze-transcripts.sh -p0 mcp1 -nofit -pid -file w2020/slack/pid.csv  -out tmp-3-mcp1 >& tmp.log
+</pre>
+
+<p>The output files in the 3 directories, tmp-3-flat, tmp-3-random, tmp-3-mcp1, contain the split transcripts in 3 versions (only differing in the last column, p0). The first has no p0, the 2nd and 3rd have p0 given by the completely random model and the MCP1 model, respectively.
+
+<P>Each line in those files represents one move (or pick) attempt. The <tt>code</tt> column of the output files contains 0 for a successful move (or pick) attempt, and a non-zero (usually 3) for a failed attempt. The p0 column (where applicable) contains the value of p0 (for the relevant baseline model) before each attempt.
+
+<p>With a large real-life sample, it's likely that the log file will contain some error messages. E.g. the following message is due to the fact that a particular experiment plan no longer exists:
+<pre>
+ERROR: Skipping player=A3UKRC3LBM1LEW due to missing data. The problem is as follows:
+java.io.IOException: No experiment plan directory exists: /opt/tomcat/game-data/trial-lists/pilot05_1
+</pre>
+The following message indicates that a particular plan no longer has any trial list files in its directory:
+<pre>
+ERROR: for player A1FKRZKU1H9YFC, no trial list is available for id=nameability_high_first any more
+</pre>
+
+<p>
+The following message indicates that a rule set file has been (re)moved, and no longer exists at the location specified in the trial list file that was used during the particular player's play.
+<pre>
+ERROR: Cannot process data for player=APGX2WZ59OWDN due to missing data. The problem is as follows:
+java.io.IOException: Cannot read rule file: /opt/tomcat/game-data/rules/Rule-002.txt
+</pre>
+This particular message is only relevant in runs with <tt>-p0</tt> on, since we need to know the rules to compute p0. Thus it's likely that there will be fewer split transcripts in the analyses with p0 than in those without p0.
+
+<P>
+Such phenomena usually result from the research team occasionally rearranging the experiment control files. Still, despite such defects, you will have plenty of remaining good data to work with.
+
+</body>
+</html>

@@ -1,0 +1,336 @@
+<html>
+<head>
+  <!-- style type="text/css">h2 {page-break-before:always}</style -->
+  <title>Composite Image objects</title>
+   <link rel="stylesheet" type="text/css" href="css/rule-game.css"/>
+ </head>
+<body>
+  <h1>Composite Image objects</h1>
+  <div    align="center">Updated: April 13, 2022, for GS ver. 4.012</div>
+
+  <p>Since version 3.*, the Game Server <a href="object-properties.html">supports Image-and-property-based objects.</a> This document discusses a particular class of such objects, the <strong>composite image objects</strong> introduced in GS 4.009. Unlike the images for the objects previously available in the Game Server, the composite image objects are not pre-generated and stored in /opt/tomcat/game-data (and the GitHub repository); instead, they are generated dynamically in the Game Server whenever they are needed.
+
+
+    <h2>What are composite image objects?</h2>
+
+  <p>
+    A composite image object, as proposed by Paul in March 2022, consists of 3 small shapes, or <strong>elements</strong> (circles, squares, triangles, or stars), each of which has its own size, color, and opacity level. The elements can be arranged either horizontally or vertically. For example:
+    <ul>
+      <li>
+	<tt>/composite/h/d=313/b=333/rt/bq/gc</tt>
+	<img src="GetImageServlet?image=/composite/h/d=313/b=333/rt/bq/gc">
+      <li>
+	<tt>/composite/v/d=123/b=321/bt/rs/gc</tt>
+	<img src="GetImageServlet?image=/composite/v/d=123/b=321/bt/rs/gc">
+      <li>
+	<tt>/composite/h/b=321/rq/rq/rq</tt>
+	<img src="GetImageServlet?image=/composite/h/b=321/rq/rq/rq">
+    </ul>
+
+<P>One can also use composite image objects with fewer or more than 3 elements. One element is allowed too:
+    <ul>
+      <li>
+	<tt>/composite/h1/d=3/b=3/gc</tt>
+	<img src="GetImageServlet?image=/composite/h1/d=3/b=3/gc">
+     <li>
+	<tt>/composite/h1/d=2/b=2/gc</tt>
+	<img src="GetImageServlet?image=/composite/h1/d=2/b=2/gc">
+     <li>
+	<tt>/composite/h1/d=1/b=1/gc</tt>
+	<img src="GetImageServlet?image=/composite/h1/d=1/b=1/gc">
+    <li>
+	<tt>/composite/h5/d=11233/b=31313/rs/rs/rs/rs/rs</tt>
+	<img src="GetImageServlet?image=/composite/h5/d=11233/b=31313/rs/rs/rs/rs/rs">
+ <li>
+	<tt>/composite/v2/d=31/b=13/bt/bt</tt>
+	<img src="GetImageServlet?image=/composite/v2/d=31/b=13/bt/bt">
+    </ul>
+
+<p>Since GS 4.011, as proposed by Charles, the Game Server are also have "grid" composite objects. This is a generalization of the "h" and "v" objects; they are assembled from elements arranged into a rectangular grid with an arbitrary number of rows and columns.
+
+<table border="1">
+  <tr>
+    <td><tt>/composite/g33/d=123123123/b=111222333</tt>
+    <td><tt>/composite/g34/d=111122223333/bq/bc/bt/bs/gq/gc/gt/gs/rq/rc/rt/rs</tt>
+    <td><tt>/composite/g33/rq/rq/rq/gq/xx/gq/bq/bq/bq</tt>
+  </tr>
+  <tr>
+    <td>
+      <img src="GetImageServlet?image=/composite/g33/d=123123123/b=111222333">
+    <td>
+  	<img src="GetImageServlet?image=/composite/g34/d=111122223333/bq/bc/bt/bs/gq/gc/gt/gs/rq/rc/rt/rs">
+   <td>
+  	<img src="GetImageServlet?image=/composite/g33/rq/rq/rq/gq/xx/gq/bq/bq/bq">
+
+  </tr>
+</table>
+
+    
+    <h3>Comparative sizes</h3>
+
+<p>Two elements are notionally considered to be of the same size if squares of the same size can be circumscribed around them. Thus, a circle of diameter <em>D</em> is considered of the same size as a square or equilateral triangle whose sides are of the length  <em>D</em>, or a star in which the distance between two most remote points (vertices) is <em>D</em>. Since a triangle or or star of a given size occupies smaller surface area than a circle or square of the same (by the above defnition) size, the former may visually appear smaller than the latter.
+    
+
+<p>This is illustrated by  following table; within each cell of the table, the 3 elements are considered to be of the same size.
+
+  <table border="1">
+    <tr><th>Small (d=1)<th> Medium (d=2) <th> Large (d=3)</tr>
+    <tr>
+      <td>
+	<tt>/composite/h/d=111/rs/gq/bt</tt><br>
+	<img src="GetImageServlet?image=/composite/h/d=111/rs/gq/bt">
+      <td>
+	<tt>/composite/h/d=222/rs/gq/bt</tt><br>
+	<img src="GetImageServlet?image=/composite/h/d=222/rs/gq/bt">
+      <td>
+	<tt>/composite/h/d=333/rs/gq/bt</tt><br>
+	<img src="GetImageServlet?image=/composite/h/d=333/rs/gq/bt">
+    </tr>
+
+    <tr>
+      <td>
+	<tt>/composite/v/d=111/rt/gq/bs</tt><br>
+	<img src="GetImageServlet?image=/composite/v/d=111/rt/gq/bs">
+      <td>
+	<tt>/composite/v/d=222/rt/gq/bs</tt><br>
+	<img src="GetImageServlet?image=/composite/v/d=222/rt/gq/bs">
+      <td>
+	<tt>/composite/v/d=333/rt/gq/bs</tt><br>
+	<img src="GetImageServlet?image=/composite/v/d=333/rt/gq/bs">
+    </tr>
+    
+  </table>
+
+    
+  
+    
+    <h2>How to use composite image objects?</h2>
+
+  <p>Like other objects (whether the legacy shape-and-color based ones, or the image-and-properties-based ones), composite image objects can be used to define a game in a trial list file. All the same rules described in 
+    <a href="object-properties.html#boards">supports Image-and-property-based objects |Controlling the initial board generation</a>  apply. That is, in any parameter set (= a line of a trial list file) you can either specify the set of composite image objects from which such objects will be randomly drawn, or you can specify a set initial board files (and then create those board files).
+
+  <p>As with any image-and-property-based object, a composite image object has a set of properties, which can be accessed in   <a href="object-properties.html#boards">rules</a>
+
+    <p>The rest of this document describes how composite image objects are defined, and what properties they have.
+    
+<h2>Names of composite image objects</h2>
+
+
+<p>Each individual  composite image object is identified by its name, which describes the elements from which the composite image is constructed.  Consider the following image object names as examples:
+   <ul>
+      <li>
+	<tt>/composite/h3/d=331/b=313/rt/bq/gc</tt>
+	<img src="GetImageServlet?image=/composite/h/d=331/b=313/rt/bq/gc">
+   </ul>
+
+<p>The above name consists of the following parts:
+
+  <ol>
+    <li><strong><tt>/composite</tt> -- this is a mandatory prefix</strong>, which tells the Game Server that the object needs to be dynamically generated inside the server, rather than read in from a pre-created SVG file and property file.s
+    <li> <strong>Orientation</strong>, e.g. <tt>/h3</tt> (3 elements, horizontally arranged) or  <tt>/v2</tt> (2 elements, vertically arranged). Since Paul's proposal talked primarily of composite objects made out of 3 elements, this is the default number of elements in a composite object, and you can omit the digit <tt>3</tt>. Thus, /h means the same as /h3.
+
+      <br>
+      For grid objects, the orientation part has the form <tt>/g<em>RC</em></tt>, consisting of <tt>/g</tt> and two digits specifying the number of rows and columns, respectively. E.g. <tt>/g34</tt> for a grid with 12 elements (3 rows and 4 columns).
+
+    <li><strong>Changing defaults.</strong> An optional part, not shown here, using for providing certain defaults, which are particularly useful when wildcards are used 
+	    (as discussed in the next section). This may include:
+	    <ul>
+		    <li><tt>/allColors=gr</tt> : the colors (when "wildcarded" or "defaulted") will be chosen from the set of green and red.
+		    <li><tt>/allShapes=qx</tt> : the shapes (when "wildcarded" or "defaulted") will be chosen from the set of "square" and "blank"
+	    </ul>
+	    
+    <li> <strong>Orderable features</strong>. Some features of elements, namely their size and opacity are considered "orderable", that is a player is supposed to figure that there is something special about a composite image consisting e.g. of elements ordered in the order of increasing sizes:
+    <ul>
+      <li>
+	<tt>/composite/h/d=123/rc/bc/gc</tt>
+	<img src="GetImageServlet?image=/composite/h/d=123/rc/bc/gc">
+    </ul>
+    or decreasing opacities:
+   <ul>
+      <li>
+	<tt>/composite/h/b=321/rs/rs/rs</tt>
+	<img src="GetImageServlet?image=/composite/h/b=321/rs/rs/rs">
+   </ul>
+These features of the elements are described in the format <em>featureName=featureValue</em>. E.g. the component <tt>d=123</tt> means that the three elements, ordered from the left to the right or from the top to the bottom, have sizes ("<strong>d</strong>iameters") "small",  "medium", and "large", respectively. (Each orderable property currently has 3 possible levels, described by values 1 thru 3).   The component  <tt>b=321</tt> means that the 3 elements have the opacity ("<strong>b</strong>rightness") values "high", "medium", and "low" (i.e. 3, 2, 1).
+   <br>
+
+   All orderable features have default values (for size, "large", i.e. 3; for opacity, "high", i.e. 3 as well). If you omit any component in the name of a composite image, all of its elements will have the default value of the respective property. For example, in the following example, all 5 elements are high-opacity, but vary in sizes.
+   <ul>
+        <li>
+	<tt>/composite/h5/d=32123/rs/gs/bs/gs/rs</tt>
+	<img src="GetImageServlet?image=/composite/h5/d=32123/rs/gs/bs/gs/rs">
+   </ul>
+<br>
+
+We can add more orderable features in the future, e.g. texture pattern or tilt.
+
+<br>For a grid composite object, the number of digits in the <tt>d=...</tt> and <tt>b=...</tt> strings should be equal to the number of rows times the number of columns. They describe the elements one by one, arrangede by row.
+
+<li> <strong>Colors and shapes of elements</strong>. The last section of the name decribes the colors and shapes of individual elements,
+	in the <em>/ColorShape/ColorShape/...</em> format, with the one-letter codes as follows:
+  <table border="1">
+    <tr><td colspan="2">Colors</tr>
+    <tr><td>r <td>red </tr>
+    <tr><td>g <td>green</tr>
+    <tr><td>b <td>blue</tr>
+    <tr><td>x <td>Used in /xx to describe a skipped (empty) element</tr>
+  </table>
+
+  <br>
+  
+   <table border="1">
+     <tr><td colspan="2">Shapes</tr>     
+    <tr><td>c <td>circle </tr>
+    <tr><td>s <td>star </tr>
+    <tr><td>q <td>square</tr>
+    <tr><td>t <td>triangle</tr>
+    <tr><td>x <td>empty element (leaves the appropriate section of the composite object empty)</tr>
+  </table>
+
+   <br>
+   This part of the name can be omitted as well. If omitted, the default element, red square, will be used.
+
+   <br>For brevity, you can use /x (instead of the normal /xx) to describe a blank element. After all, blanks don't have colors.
+	
+   <br>For a grid composite objects with R rows and C columns, this component needs to describe all R*C elements, arranged by row, unless you want to use the default color and shape
+	(red squares, or whatever is provided as the first elements of your "allColors" and "allShapes").
+   
+	<br>To save space, one can use the caret ("<tt>^</tt>") notation for multiple identical items. E.g. you can write <tt>/bc^10</tt> to specify 10 blue circles; 
+	you can write <tt>/*^5</tt> instead of <tt>/*/*/*/*/*</tt> or <tt>/??/??/??/??/??</tt> to indicate 5 elements of random shapes and colors.
+	
+  </ol>
+
+
+<p>Names of individual composite objects will appear in initial board files saved by the Game Server. If you create a game that uses pre-defined initial boards, you will use names of individual composite objects in the board description files as well.
+
+  <h2>Test form</h2>
+
+  <p>You can use the form below to see the image and properties associated with any legal composite-object name. (You can use a wildcard expression too, and will be shown one of the matching composite objects).
+	
+<!-- form method="get" action="GetImageServlet" -->
+<form method="get" action="image-object-report.jsp">
+	<input type="text" name="image" size="120" value="/composite/h/d=123/b=321/?q/?q/?q"><br>
+	<button type="submit">	Show this object! </button>
+	       </form>
+
+	
+	
+  <h2>Using wildcards to describe a family of composite image objects</h2>
+
+<p>When you create a <a href="para-set.html">parameter set</a> for a game in which initial boards are genereated randomly, populated with game pieces drawn from a certain set of objects, you need to specify the set of objects in the column <tt>images</tt>. While it is possible to describe the set of objects by explicitly listing all of its elements, e.g. <pre>"/composite/h/d=123/rc/bc/gc;/composite/h/d=321/rc/bc/gc;/composite/h/d=222/rc/bc/gc"</pre>, it is often possible and convenient to describe entire family of composite objects by using wildcards.
+
+<p>The wildcard syntax used for desribing composite image objects is similar to the wildcard syntax for file names used e.g. in MS Windows or in UNIX shells. However, it is somewhat more primitive. Wildcards can be used in each component of the object name, wherever it makes sense.
+  <ul>
+    <li>The character <strong><tt>?</tt></strong> match any letter or digit that's allowed in a given position. For example, <tt>/d=1?1</tt> will match <tt>/d=111</tt>,      <tt>/d=121</tt>, and  <tt>/d=123</tt>.  
+    <li>The character <strong><tt>*</tt></strong> can be used to match any string, and can only be used at the end of a component. For example,  <tt>/b=*</tt> will match any sequence of brightness values; <tt>/b=3*</tt> will match any sequence that starts with 3.
+  </ul>
+
+<p>Examples of families of composite image objects described with wildcards:
+  <ul>
+    <li><tt>/composite/?/d=1??/*/r?/*</tt> -- 3 (default number) of elements, arranged either way (horizontal or vertical); the first element is small (size rank 1), the other of any size; default opacity (high). The first and third element of arbitrary colors and shapes; the second is red, of an arbitreary shape.
+    <li><tt>/composite/h2/b=13/?q/?q</tt> -- 2 elements, arranged horizontally. They are of the default size (large); the first is of low opacity (1), the second, of high brightness (3). Both are squares, of arbitrary colors.
+  </ul>
+
+  <h2>Properties of  composite image objects</h2>
+
+<p>To create  <a href="object-properties.html#boards">rules</a> for playing with  composite image objects, you need to access their properties. Presently the folliowing properties are accessible:
+
+  <ul>
+<li><tt>orientation: h</tt> or <tt>v</tt>  (horiszontal or vertical)
+
+<li>Properties of an objects include the feature strings from its name, such as
+  <ul>
+<li>d: 123  (the sequence of elements' sizes)
+<li>b: 321  (the sequence of elements' brightness values)
+	  </uL>
+More of those can be introduced for any features we may add later, e.g. "t".
+
+<li>	
+We also have properties that gives you access to the object's elements' shapes and colors, i.e.
+<ul>	
+	<li>
+s: "sqt"
+		<li>
+c: "rbg"
+	</ul>
+
+<li>In principle, the above properties are sufficient to construct predicates, but obviously this would be very awkward. (E.g. if you want a predicate which hold true on all non-decreasing orders, it would look like
+(d: [111, 222, 333, 112, 113, 122, 123, 223, 233]),
+and that's slightly cumbersome. So we also have some "syntactic sugar", that is properties with names such as 
+<ul>
+	<li>d_order = one of {-1, 0, 1, 2}.
+		Here, -1 stands for "not monotonous", i.e. the sizes of the elements within the image are neither monotonically non-decreasing nor non-increasing. 0 stands for "all elements are same size" (e.g. h/RS1/BT1/GQ1).   1 stands for "non-decreasing, with at least some increase" (from the left to the right, or from the top to the bottom, as the case may be), e.g. 1/1/2 ,  1/3/3, or 1/2/3.   -1 stands for "non-increasing, with at least some decrease", e.g.  2/1/1  or 3/2/1.
+
+Thus a predicate referring to all non-decreasing orders will haves the form <code>(d_order: [0,1])</code>, and that's handier.
+<li>b_order is a similar property for opacity (brightness).
+	</ul>
+	Analogous properties can be added for any other orderable features that may be introduced later.
+
+<li>sameshape = 0 or 1  (with 1 = true)
+
+<li>samecolor = 0 or 1 (with 1=true)
+	</ul>
+	
+<li><tt>occupied</tt> is an integer-valued property indicating the number of grid cells that contain visible elements, i.e. are not blank. For an R*C grid, the value of this property may range from 0 to R*C .
+
+<li><tt>opacity</tt> is an integer-valued property ranging from 0 to 100. It is computed as the average of the opacity-times-size-scale-factor values of all elements of 
+	the grid (the opacity of a blank cell being 0), multiplied by 100.
+	If the composite image is composed entirely of squares (of varying opacity and sizes) and blanks, then this value fairly 
+	represents percentage the "average opacity" of the object. If you mix shapes (e.g. squares and circles and stars), then, at present
+	(GS 4.12) this measure is not accurate, as it does not take into account the fact that the surface area of a large circle is smaller than
+	that of a large square, and that of a large star is even smaller.
+	
+	<li><strong>Translational invariance</strong>: A group of "boolean-values" (0 or 1) properties test the invariance of the pattern formed by the elements of the grid with respect to horizontal, 
+	vertical, or diagonal translation. Namely, <tt>trans_h</tt> = 1 if each element is identical (same shape, color, brightness) 
+	to its neighbors to the right and left (i.e., in the horizontal direction). Thus, it will be 1 for an composite object that looks like
+	a set of horizontal bands; it will be 0 otherwise. Similarly, <tt>trans_v</tt> = 1 for a composite object that looks like a set of vertical bands.
+	<tt>trans_asc</tt> = 1  for a composite object whose elements appear arranged in ascending diagonal stripes (running SW to NE), while 
+	<tt>trans_desc</tt> = 1  for a composite object whose elements appear arranged in descending diagonal stripes (running NW to SE).
+		For an example of using this group of properties, see experiment plan <tt>vm/composite-04</tt>.
+
+	
+		
+		
+  <h2>Sample experiment plans</h2>
+  
+<p>To illustrate using composite image objects, an experiment plan (<tt>vm/composite-01</tt>) has been created. You can play it in GS 4.009, 
+	starting from the <a href="front-end-form.jsp">Launch page</a>. (You can also see the text of the
+	<a href="https://github.com/lupyanlab/Rule-Game-game-data/tree/master/trial-lists/vm/composite-01">trial list files</a> and 
+	<a href="https://github.com/lupyanlab/Rule-Game-game-data/tree/master/rules/vm/composite-01"?> rule set files</a> on GitHub).
+	
+<p>You may want to try pasting the names of objects from the sample trial list files into the form above, to see how wildcard expressions work, 
+	and how properties are computed. Or you can just use the <a href="check-plan-form.jsp">validation tool on those plans</a>; it will give
+	you similar information.
+	
+	
+<p>Other plans are <tt>vm/composite-02</tt> (picking game pieces in the order of the number of "occupied" elements in the piece) and 
+	<tt>vm/composite-03</tt> (picking pieces in the order of their average opacity).
+	
+<p>To make the details of composite images more visible, you may want to make the 6x6 board appear as large as possible. To do that, use a compute with a large monitor; maximize the visual area of the web browser window (with F11); turn off the "Debug" mode of the GUI client.
+
+  <h2>Command-line unit testing</h2>
+
+	<p>Since composite image objects are dynamically generated, there is no directory with SVG file and a property file where they are stored. Nonetheless, if you would  like to see what the SVG file for a particular object would like, or what the values of its properties are, this can be done with the help of a command-line tool on sapir.
+		
+<p>Example:		
+	
+<pre>
+  /home/vmenkov/w2020/game/scripts/composite.sh /composite/h/d=123
+</pre>
+  
+<p>In this example, the object has elements of the specified sizes, of the default opacity (high), default color (red), and default shape (square).
+
+<pre>
+  /home/vmenkov/w2020/game/scripts/composite.sh /composite/h/d=123/b=*/r?/g?/b?
+</pre>
+
+<p>In this example, the script will randomly pick one object from the family of objects matching the description. That is, the sizes and colors are specified, but the opacity values and shapes will be picked randomly.
+	
+	
+<p>
+	
+	
+</body>
+</html>
+
+   

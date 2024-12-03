@@ -1,0 +1,114 @@
+<html>
+  <head><title>Standard Operating Procedures: Preparing and running an experiment with the Rule Game Server</title>
+   <link rel="stylesheet" type="text/css" href="css/rule-game.css"/>
+  </head>
+<body>
+  <h1>Standard Operating Procedures: Preparing and running an experiment with the Rule Game Server</h1>
+
+    <p align="center"><em>Updated 2021-12-15 for Game Server ver. 4.003</em></p>
+
+    <h2>Preparing the experiment control files</h2>
+
+    <h3>The control files</h3>
+  <p>As discussed in the <a href="data.html">Rule Game server data guide</a>, a number of files need to be prepared in the <strong>server's game data directory</strong>    in order to control the players' experience during your experiment.  (The game data directory on <tt>sapir</tt> at UWM is <tt>/opt/tomcat/game-data</tt>. An administrator setting up an instance of Game Server at a host in another institution can choose a different location, and indicate it in the <tt>GAME_DATA</tt> variable in the <a href="setup/setup-config.html">master config file</a>).
+
+    <p>To summarize, this set of files needed to run an experiment should include, at a minimum:
+    <ul>
+      <li>The experiment plan directory (a subdirectory under /opt/tomcat/game-data/trial-lists), containing one or several trial list files. The server will <a href="balancing.html">pseudo-randomly assign</a> players, in a balanced manner, to different trial lists, so each of the trial list files will be the top-level file defining the experiences of a particulalry (randomly selected) subgroup of the participants of your experiment.
+      <li>For each rule set mentioned in the trial list files, a  <a href="syntax.html">rule set file</a> must be created in the rules directory, /opt/tomcat/game-data/rules. If you are creating a group of rule set files to be used in just one experiment, or in some series of experiments, it would make sense to place them into a new, specially created subdirectory under the rules directory. This will make it easier to manage rule set files.
+    </ul>
+
+    <p>Since GS 4.*, an alternative way to create experiment plans, known as <a href="concepts.html#sd">dynamic experiment plans</a>, has been made available. If you want to create an R:-type dynamic plan, you don't need an experiment plan directory, but you need a modifier file in the modifier directory.
+
+  <p>Depending on the design of your experiment, you may also need to create or modify other files:
+    <ul>
+      <li>If your trial lists refer to pre-created initial boards, you need to create the initial board directory, which will contains the initial border files, and, possibly, an ordering control file.
+      <li>If your experiment intends to use custom shapes (as reflected in the trial list files or rule sets), you need to make sure you have the SVG files for all shapes at the appropriate locations. (See: <a href="colors-and-shapes.html">Using custom shapes and colors in Rule Game Server 2.*</a>)
+      <li>If your experiment intends to use custom colors (as reflected in the trial list files or rule sets), make sure you have those colors defined in the  <a href="colors-and-shapes.html#map">color map file</a>
+
+      <li>If you want your experiment plan, or a dynamic plan based on your rule set, to appear in the <a href="launch/">MLC Launch Page</a> (for the staff) or the <a href="launch/launch-rules.jsp">APP Launch Page</a> (for the students), you need either to follow certain rules for placing the trial list files or the rule set files into certain special directories, or to edit the "launch files". For details, see  <a href="launch/launch-setup.html">Setting up launch pages</a>.
+    </ul>
+
+    <h3>Using a GitHub repository</h3>
+    
+
+  <p>One should not try to  edit the experiment control files directly in the server's game data directory. Instead, one should follow the procedures outlined in the <a href="deploy.html">Deployment SOP</a> (in that document, you only need to look at <span class="yellow">the sections written on yellow background</span>). In a nutshell:
+    <ul>
+      <li>The "master copy" of the experiment control files (the entire content of the /opt/tomcat/game-data directory tree) is kept in a GitHub repository;
+      <li>You can "check out" these files to your working directory, either on your home PC or on sapir;
+      <li>You can edit the files in your working directory as desired, adding new subdirectories and files as needed;
+      <li>Once done, you can check in your work into the repository; that will result in the updated files being automatically deployed to the  /opt/tomcat/game-data directory tree on sapir.
+	</ul>
+	
+      <p>This procedure ensures that at any point in the future we will have a reliable to see, by examining the repository's history, what set of control files was deployed to the server during any particular experiment.
+
+        <h3>Checking your math</h3>
+
+      <p>One of the most complicated parts of the <a href="syntax.html">syntax of rule set files</a> is the field which specifies the bucket(s) into which a rule allows game pieces to be put. (See the <a href="arithmetic.html">Bucket expression arithmetic Guide</a> for details). To help you test your arithmetic, we have the  <a href="arithmetic-form.jsp">Arithmetic test form</a>, which you can use to test your expression, for various values of the built-in variables, before actually using it in a rule.
+
+	
+        <h3>Validating your plan</h3>
+  <p>Once you have prepared your trial list files, rule set files, and any other data you need, you should validate your experiment plan. Go to the <a href="game-api-2.html#checkPlan">Validate your plan</a> link, and enter the name of your experiment plan. The validation tool will read the trial list files for your experiment, and various other files (rule sets etc) they refer to, and will check them for syntax errors, references to non-existing resources, etc. Please review the validator's report; if any deficiencies are reported, try to correct them, <a href="game-api-2.html#clear">clear the server tables</a>, and validate your plan again.
+
+    
+    <h3>Testing your plan</h3>
+  <p>One can do this with the GUI client or with the <a href="game-api-2.html#html">HTML play interface</a>.
+
+    <p>If you realize that your rules need to be corrected, and edit your trial list files or rule set files, <strong>you should <a href="game-api-2.html#clear">clear the server tables</a> before playing again (with another player ID).</strong> This will ensure that the server will remove the earlier version of the rule sets from its memory.
+
+      <h2>Keeping track of what was done</h2>
+
+    <p>For any later analysis to be valid, it is important that complete information were kept about the experimental environment, which includes both the control files and the software version.
+
+      <ul>
+	<li>Once you have developed and extensively tested your experiment plan, you open your experiment to real players (e.g. those coming from Amazon's Mechanical Turk). After this has been done, it would be a very good idea to never modify the experiment's trial list files and the files it refers to (rule set files etc). This will ensure that all participants have a comparable experience, and hat the collected data could be properly analyzed in the future. If you want to modify your rules, or the order in which they are presented to players, it is much better to create a new experiment plan.
+
+	<li>Make a record of what set of control files was deployed. If you make sure to always have the current set of files in the GitHub repository, it is, in principle, sufficient to know when the experiment was run, and you would be able to find the appropriately timed snapshot of the control files in the repository. However, you may also want to make a "snapshot" of the server's game data directory before the experiment starts, e.g. by making a zip file:
+	  <pre>
+	    cd /opt/tomcat
+	    zip -r ~/game-data-`date -Idate`.zip game-data
+	  </pre>
+	  This will produce a file with a name such as game-data-2021-03-15.zip in your home directory.
+
+	<li>Make a record of what version of the GUI client is used, and what version of the Game Server it uses. The GUI client has a special URL to check what it's version is; for the production version, it is
+<a href="http://sapir.psych.wisc.edu/rule-game/prod/?version=true">http://sapir.psych.wisc.edu/rule-game/prod/?version=true</a>, and for the development version, it is <a href="http://sapir.psych.wisc.edu/rule-game/dev/?version=true">http://sapir.psych.wisc.edu/rule-game/dev/?version=true</a>. The version reported generated by that URL may look like this:
+	  <pre>
+Client Version [environment-commitHash]: dev-962254ba6e35966540d0f06a2470ec89beaa0474
+Server URL: http://sapir.psych.wisc.edu:7150/w2020-dev
+Server Version: 2.006  
+	  </pre>
+Make sure to have thus information recorded in your experiment log. (Note that the server version is not reported prior to 2.006).
+      </ul>
+
+      <h2><a name="init">Configuring the instructions pages</h2>
+
+    <p>We refer to the sequence of screens shown by the GUI client to a new player as the "instruction booklet". These screens contain information about the rules of game, to the extent we want the player to know them in advance.
+
+    <p>The sequence of screens presented to players in GS 1.* thru 3.* (and still available in GS 4.*) is referred to as the "instruction booklet No. 0". As of December 2021, it is expected that Kevin will add to the GUI client the functionality to display different instruction booklets to different players; the choice of the booklet will be controlled by the trial set files.
+
+    <p>If the experiment designer decided to create a new instruction booklet to be presented to some players, here are the steps:
+
+      <ol>
+	<li>Check with Kevin how many booklets exist now. If, for examples, booklets Nos. 0 thru 3 are currently in existence, you may choose to designate your new booklet as No. 4.
+
+	<li>In the experiment plan you are designing, indicate that this instruction booklet is to be presented to players assigned to some trial lists. To do that, put the appropriate integer value (in this example, <tt>4</tt>) in the column named <tt>init</tt> of the first data row (= the first parameter set) of these trial lists.
+
+	<li>Check in the trial list files to the GitHub repository, in order for them to be auto-deployed to the server (so that Kevin will be able to  test your booklet).
+
+	<li>Create the pages of your booklet, as JPEG or PNG files, and send them to Kevin, asking him to add them to the GUI application, to be presented as the instruction booklet with the desired number (e.g. 4, in this example).
+
+	<li>Kevin will add these image files to the appropriate directory of the client, rebuild the client, deploy it to the server, and inform you of its availability.
+      </ol>
+      
+
+      <h2>Data processing</h2>
+
+    <p>See the <a href="data.html#export">section on exporting data from the Game Srever's SQL tables</a>, and the <a href="data.html#saved">section on files saved by the Game Server</a> in the Data Guide for guidance on what data are recorded during the experiment, and how they can be extracted from the server.
+
+    
+<hr>
+[<a href="index.html">Main page</a>]
+[<a href="data.html">Rule Game Server data guide</a>]
+  
+</body>
+</html>
