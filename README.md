@@ -1,6 +1,6 @@
 # GOHR ML Experiments (Simple Version)
 
-This repository contains the implementation of RL Agents for learning rule-based games.
+This repository contains the updated implementation of RL Agents for learning rule-based games by Pulick et al. The original paper is at https://ieeexplore.ieee.org/document/10510453
 
 ## Setup and Installation
 
