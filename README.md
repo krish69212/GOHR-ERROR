@@ -4,12 +4,6 @@ This repository contains the implementation of RL Agents for learning rule-based
 
 ## Setup and Installation
 
-Clone the repository:
-```bash
-git clone https://github.com/SkySuperCat/OLDGOHR.git
-cd access-3395249-mm/reproducibility
-```
-
 You can set up the required environment using mamba (or conda):
 ```bash
 
