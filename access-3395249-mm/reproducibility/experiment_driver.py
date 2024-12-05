@@ -70,7 +70,7 @@ if __name__ == "__main__":
     |[-+]?\\.(?:inf|Inf|INF)
     |\\.(?:nan|NaN|NAN))$''', re.X),
     list(u'-+0123456789.'))
-    base_directory = '/data/local/cat/GOHR/access-3395249-mm/reproducibility/captive/game/game-data/rules'
+    base_directory = '/GOHR/access-3395249-mm/reproducibility/captive/game/game-data/rules'
     with open(yaml_path, 'r') as param_file:
         args = yaml.load(param_file, Loader = yaml.SafeLoader)
     # For local testing
