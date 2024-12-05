@@ -15,6 +15,7 @@ mamba activate gohr
 To run an DQN experiment:
 ```bash
 cd access-3395249-mm/reproducibility
+chmod +x ./dqn.sh
 ./dqn.sh
 ```
 This script will use the default configuration from `params/dqn.yaml`.
