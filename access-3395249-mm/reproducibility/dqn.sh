@@ -20,4 +20,4 @@ endif
 
 # Use to run the driver script
 echo "Running Python command"
-python3 experiment_driver.py "/data/local/cat/GOHR/access-3395249-mm/captive/game/game-data/rules" "/data/local/cat/GOHR/access-3395249-mm/reproducibility/params/dqn.yaml"
+python3 experiment_driver.py "/GOHR/access-3395249-mm/captive/game/game-data/rules" "/GOHR/access-3395249-mm/reproducibility/params/dqn.yaml"
