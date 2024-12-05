@@ -19,5 +19,5 @@ cd access-3395249-mm/reproducibility
 ```
 This script will use the default configuration from `params/dqn.yaml`.
 
-You will need to change the rule file path in dqn.yaml, dqn.sh and experiment_driver.py to your actual path.
+You will need to change the rule file path in `dqn.yaml`, `dqn.sh` and `experiment_driver.py` to your actual path.
 
