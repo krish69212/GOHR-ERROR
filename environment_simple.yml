@@ -1,0 +1,16 @@
+name: gohr
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - pip
+  - python
+  - numpy
+  - pandas
+  - gym
+  - wheel
+  - pyyaml
+  - matplotlib
+  - tqdm
+  - joblib
+# prefix: /data/local/cat/conda/miniforge3/envs/gohr

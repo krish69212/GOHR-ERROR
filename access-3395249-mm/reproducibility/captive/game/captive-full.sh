@@ -24,7 +24,8 @@ set h=`(cd $sc; pwd)`
 source "$h/scripts/set-var-captive.sh"
 
 set opt="-Doutput=FULL"
-
+echo "Script directory (sc): $sc"
+echo "Main directory (h): $h"
 #-- Checking for some command-line options
 
 if ($#argv >= 2 && $1 == "-inputDir") then

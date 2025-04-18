@@ -105,10 +105,10 @@ def run_experiment(args):
 
     # Generate random seeds for engine, pytorch, numpy, and random
     if args['SEED'] == -1:
-        seeds1 = np.random.randint(1, 2**32-2, size = args["REPEAT"])
-        seeds2 = np.random.randint(1, 2**32-2, size = args["REPEAT"])
-        seeds3 = np.random.randint(1, 2**32-2, size = args["REPEAT"])
-        seeds4 = np.random.randint(1, 2**32-2, size = args["REPEAT"])
+        seeds1 = np.random.randint(1, np.iinfo(np.int32).max, size = args["REPEAT"])
+        seeds2 = np.random.randint(1, np.iinfo(np.int32).max, size = args["REPEAT"])
+        seeds3 = np.random.randint(1, np.iinfo(np.int32).max, size = args["REPEAT"])
+        seeds4 = np.random.randint(1, np.iinfo(np.int32).max, size = args["REPEAT"])
         # Update the seeds in the parameter file
         args.update({"SEEDS1": seeds1, "SEEDS2": seeds2, "SEEDS3": seeds3, "SEEDS4": seeds4})
 

@@ -16,12 +16,13 @@ import subprocess, sys, re, random, json
 def readLine(inx):
     while True:
         s = inx.readline()
+        print("s=", s)
         sys.stdout.write("Received: "+ str(s) + "\n")
         # sys.stdout.write("Received type="+ str(type(s)) + "\n")
         if not s:
             return s
 
-        s = s.decode()  #-- for Python3
+        s = s.decode('utf-8')  #-- for Python3
         if s.startswith('#'):
             continue
         else:
@@ -97,7 +98,13 @@ def mainLoopA(inx,outx):
     #----------------------------------------------------------------------
     #-- Keep playing until the episode is finished
     while True:
-        statusLine = readLine(inx).strip();
+        i=0
+        while i<5:
+            statusLine = readLine(inx).strip();
+            i+=1
+            if len(statusLine.split())>=3:
+                sys.stdout.write("Received: "+ statusLine + "\n")
+                break
         jsonLine = readLine(inx).strip();
         
         sys.stdout.write("Unpack: "+ statusLine + "\n")

@@ -70,13 +70,16 @@ if __name__ == "__main__":
     |[-+]?\\.(?:inf|Inf|INF)
     |\\.(?:nan|NaN|NAN))$''', re.X),
     list(u'-+0123456789.'))
-    base_directory = '/GOHR/access-3395249-mm/reproducibility/captive/game/game-data/rules'
+    # base_directory = '/GOHR/access-3395249-mm/reproducibility/captive/game/game-data/rules'
+    
+    base_directory = './captive/game/game-data/rules'
     with open(yaml_path, 'r') as param_file:
         args = yaml.load(param_file, Loader = yaml.SafeLoader)
     # For local testing
     if args['RUN_TYPE']=='normal':
-        rule_file_path = os.path.join(base_directory, args["RULE_NAME"])
+        rule_file_path = os.path.join(rule_dir_path, args["RULE_NAME"])
         args.update({'RULE_FILE_PATH' : rule_file_path})
+        print("rule file path", rule_file_path)
         run_experiment(args)
     # # For hyperparameter tuning runs
     # elif args['RUN_TYPE']=='tune':
