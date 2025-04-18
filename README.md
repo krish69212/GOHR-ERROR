@@ -4,21 +4,60 @@ This repository contains the updated implementation of RL Agents for learning ru
 
 ## Setup and Installation
 
-You can set up the required environment using mamba (or conda):
-```bash
+#  GETTING STARTED WITH WINDOWS OS 
 
-mamba env create -f environment.yml
-mamba activate gohr
-```
 
-## Running Experiments
-To run an DQN experiment:
-```bash
-cd access-3395249-mm/reproducibility
-chmod +x ./dqn.sh
-./dqn.sh
-```
-This script will use the default configuration from `params/dqn.yaml`.
+### create a WSL
 
-You will need to change the rule file path in `dqn.yaml`, `dqn.sh` and `experiment_driver.py` to your actual path.
+1) Install WSL and Virtual Machine Platform:
+- Open Windows Features again.
 
+- Check Windows Subsystem for Linux and Virtual Machine Platform.
+
+- Click OK and restart your computer.
+
+2) Install a Linux Distribution:
+- Open Microsoft Store.
+
+- Search for your preferred Linux distribution (e.g., Ubuntu, Debian).
+
+- Click Install.
+
+
+3) select the wsl terminal
+
+### setting environment in wsl2
+
+## get the latest changes
+
+````bash
+git pull origin main   
+
+sudo apt-get update
+sudo apt-get upgrade -y
+
+sudo apt-get install -y wget curl bzip2 ca-certificates
+
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
+
+bash ~/miniconda.sh -b -p $HOME/miniconda
+eval "$($HOME/miniconda/bin/conda shell.bash hook)"
+
+echo 'eval "$($HOME/miniconda/bin/conda shell.bash hook)"' >> ~/.bashrc
+source ~/.bashrc
+````
+## Install Java - add this line
+````bash
+sudo apt-get install -y openjdk-11-jdk
+
+cd GOHR-ERROR/
+conda env create -f environment_simple.yml
+pip install torch
+
+````
+############Running the code 
+````bash
+chmod +x dqn1.sh 
+
+./dqn1.sh
+````
